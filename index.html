@@ -253,6 +253,9 @@ a { color: var(--accent); }
 details { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 12px; }
 details > summary { cursor: pointer; font-weight: 600; font-size: .92rem; list-style-position: inside; }
 details > summary::marker { color: var(--ink-3); }
+details.plain { border-top: 0; margin-top: 0; padding-top: 0; }
+details.plain > summary { font-size: 1.05rem; }
+.fact-s:empty, .ro-s:empty, .note:empty, .tab-sub:empty, .headline-sub:empty { display: none; }
 .table-scroll { overflow-x: auto; margin-top: 10px; }
 table { border-collapse: collapse; width: 100%; font-size: .86rem; }
 th, td { text-align: right; padding: 7px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
@@ -271,6 +274,7 @@ th:first-child, td:first-child { text-align: left; }
 .tile .ico { width: 30px; height: 30px; }
 .tile b { font-size: .86rem; font-weight: 600; letter-spacing: -.01em; }
 .tile span { font-size: .72rem; color: var(--ink-3); }
+.tile-custom span { display: none; }
 .tile-custom { border-style: dashed; background: transparent; }
 
 .drinks { list-style: none; margin: 16px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
@@ -375,7 +379,7 @@ th:first-child, td:first-child { text-align: left; }
     <div class="panel">
       <span class="brand-name"><span class="brand-dot"></span>AlcoholTrack</span>
       <h1 class="hero-title">Sai quando sei a zero.</h1>
-      <p class="hero-sub">Segna cosa bevi: l'app stima il tuo tasso alcolemico, il picco e l'ora in cui torni a zero.</p>
+      <p class="hero-sub">Segna cosa bevi: vedi tasso, picco e ora in cui torni a zero.</p>
       <div class="hero-art" aria-hidden="true">
         <svg viewBox="0 0 400 130">
           <line x1="8" x2="392" y1="108" y2="108" stroke="var(--line)"/>
@@ -391,7 +395,7 @@ th:first-child, td:first-child { text-align: left; }
       <button class="btn btn-primary btn-big" id="btnGoogle" type="button" disabled>Accedi con Google</button>
       <button class="btn btn-big" id="btnLocal" type="button" hidden>Prova senza account, su questo dispositivo</button>
       <p class="msg" id="accessNote" hidden></p>
-      <p class="fine">Dopo il primo accesso resti collegato su questo dispositivo. I tuoi dati sono visibili solo a te.</p>
+      <p class="fine">I tuoi dati sono visibili solo a te.</p>
     </div>
   </section>
 
@@ -448,43 +452,41 @@ th:first-child, td:first-child { text-align: left; }
                 <div class="ro-s" id="peakS"></div>
               </div>
             </div>
-            <p class="trend" id="trend"></p>
             <div class="scale" aria-hidden="true">
               <div class="scale-track" id="scaleTrack"></div>
               <div class="scale-labels" id="scaleLabels"></div>
-              <p class="scale-cap">Soglie dell'art. 186 del Codice della Strada: oltre 0,5 sanzione amministrativa, oltre 0,8 reato, oltre 1,5 fascia più grave.</p>
             </div>
             <div class="facts" id="facts"></div>
           </section>
 
           <section class="card o3">
-            <div class="card-head"><h2>Curva del tasso alcolemico</h2><span class="hint">g/L di sangue nel tempo</span></div>
+            <div class="card-head"><h2>Curva</h2></div>
             <div class="chart-box" id="chartBox">
               <div class="tip" id="tip"></div>
               <div id="chart"></div>
             </div>
             <div class="legend">
-              <span><i></i>Stima centrale</span>
-              <span><i class="band"></i>Intervallo plausibile</span>
-              <span><i class="hi"></i>Scenario prudenziale (margine)</span>
-              <span id="legLimit"><i class="lim"></i>Limite di legge</span>
-              <span id="legMeas"><i class="meas"></i>Misura dell'etilometro</span>
+              <span><i></i>Stima</span>
+              <span><i class="band"></i>Intervallo</span>
+              <span><i class="hi"></i>Margine</span>
+              <span id="legLimit"><i class="lim"></i>Limite</span>
+              <span id="legMeas"><i class="meas"></i>Etilometro</span>
             </div>
             <details>
-              <summary>Valori ogni 30 minuti</summary>
+              <summary>Tabella dei valori</summary>
               <div class="table-scroll"><table id="table"></table></div>
             </details>
           </section>
         </div>
         <div class="col">
           <section class="card o2">
-            <div class="card-head"><h2>Cosa hai bevuto</h2><span class="hint">Tocca una bevanda per aggiungerla adesso</span></div>
+            <div class="card-head"><h2>Cosa hai bevuto</h2></div>
             <div class="presets" id="presets"></div>
             <ul class="drinks" id="drinks"></ul>
-            <p class="empty" id="drinksEmpty" hidden>Ancora niente. Tocca una bevanda qui sopra: potrai correggere ora e quantità.</p>
+            <p class="empty" id="drinksEmpty" hidden>Tocca una bevanda per aggiungerla.</p>
             <div class="sep">
               <div class="fld">
-                <span>Stomaco quando hai iniziato a bere</span>
+                <span>Stomaco</span>
                 <div class="seg" role="radiogroup" aria-label="Stomaco">
                   <label><input type="radio" name="stomach" id="stEmpty" value="empty"><span>Digiuno</span></label>
                   <label><input type="radio" name="stomach" id="stSnack" value="snack"><span>Spuntino</span></label>
@@ -492,17 +494,16 @@ th:first-child, td:first-child { text-align: left; }
                 </div>
               </div>
             </div>
-            <div class="totals" id="totals"></div>
           </section>
 
           <section class="card o4">
-            <div class="card-head"><h2>Hai un etilometro?</h2><span class="hint">Una misura reale corregge il tuo fattore</span></div>
+            <div class="card-head"><h2>Etilometro</h2></div>
             <div class="inline">
-              <label class="fld"><span>Valore letto (g/L)</span><input class="num" type="number" id="measVal" min="0" max="4" step="0.01" inputmode="decimal" placeholder="0,00"></label>
-              <label class="fld"><span>Ora della misura</span><input class="num" type="time" id="measTime"></label>
-              <button class="btn btn-primary" id="btnMeas" type="button">Aggiungi misura</button>
+              <label class="fld"><span>Valore (g/L)</span><input class="num" type="number" id="measVal" min="0" max="4" step="0.01" inputmode="decimal" placeholder="0,00"></label>
+              <label class="fld"><span>Ora</span><input class="num" type="time" id="measTime"></label>
+              <button class="btn btn-primary" id="btnMeas" type="button">Aggiungi</button>
             </div>
-            <p class="note">Soffia almeno 20 minuti dopo l'ultimo sorso, altrimenti l'alcol in bocca falsa la lettura.</p>
+            <p class="note">Soffia almeno 20 minuti dopo l'ultimo sorso.</p>
             <p class="note warn" id="measErr" hidden></p>
             <ul class="list" id="measList"></ul>
             <p class="note" id="measSum"></p>
@@ -510,27 +511,6 @@ th:first-child, td:first-child { text-align: left; }
         </div>
       </div>
 
-      <section class="card method" style="margin-top:18px">
-        <div class="card-head"><h2>Come viene calcolato</h2><span class="hint">Con i tuoi numeri</span></div>
-        <p>Nessuna formula restituisce il tasso reale: due persone uguali sulla carta possono differire del 10–20 %, e lo scarto cresce col passare delle ore. Per questo accanto a ogni stima trovi un intervallo e un orario con margine prudenziale.</p>
-        <details>
-          <summary>Formule e parametri</summary>
-          <ol id="method"></ol>
-        </details>
-        <details>
-          <summary>Fonti</summary>
-          <ul class="sources">
-            <li><a href="https://www.pubmed.gov/33099270/">Maskell, Jones, Heymsfield, Shapses, Johnston (2020)</a>: l'acqua corporea totale è più affidabile del volume di distribuzione; Forrest per BMI 17–35, Watson oltre.</li>
-            <li><a href="https://www.pubmed.gov/30553124/">Maskell, Jones, Savage, Scott-Ham (2019)</a>: confronto delle equazioni antropometriche con valori misurati.</li>
-            <li><a href="https://link.springer.com/article/10.1007/s004140000154">Seidl, Jensen, Alt (2000)</a>: fattore r individuale da peso e altezza.</li>
-            <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4361698">Searle (2015)</a>: equazioni di Watson e incertezza dei calcoli alcolemici.</li>
-            <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6474506">Jones (2019)</a>: velocità di eliminazione 0,10–0,25 g/L all'ora.</li>
-            <li><a href="https://link.springer.com/content/pdf/10.1186/1472-6904-2-4.pdf">Levitt (2002)</a>: assorbimento in circa 50 minuti a digiuno, circa 3 ore con un pasto.</li>
-            <li><a href="https://www.bps.ac.uk/publishing/our-journals/british-journal-of-clinical-pharmacology/volume-12/issue-5/ethanol-dose-dependent-elimination-michaelis-me">Rangno, Kreeft, Sitar (1981)</a>: eliminazione di Michaelis-Menten, Km 0,03 g/L.</li>
-            <li><a href="https://brocardi.it/codice-della-strada/titolo-v/art186bis.html">Codice della Strada, art. 186 e 186-bis</a>: limiti di legge.</li>
-          </ul>
-        </details>
-      </section>
     </section>
 
     <!-- Calendario -->
@@ -551,7 +531,7 @@ th:first-child, td:first-child { text-align: left; }
             </div>
             <div class="cal-grid" id="calGrid"></div>
             <div class="cal-legend">
-              <span>Sul giorno: picco stimato in g/L</span>
+              <span>Picco in g/L</span>
               <span class="mark">sotto 0,5</span>
               <span class="mark" data-b="warn">0,5 – 0,8</span>
               <span class="mark" data-b="crit">oltre 0,8</span>
@@ -571,10 +551,10 @@ th:first-child, td:first-child { text-align: left; }
     <!-- Profilo -->
     <section id="tab-profilo" hidden>
       <div class="tab-head">
-        <div><h1 class="tab-title">Profilo</h1><p class="tab-sub">I calcoli partono da questi dati</p></div>
+        <div><h1 class="tab-title">Profilo</h1></div>
       </div>
       <div class="stack narrow">
-        <p class="banner" id="profileIntro" hidden><b>Prima cosa: i tuoi dati.</b> Servono per calcolare quanta acqua ha il tuo corpo, cioè quanto si diluisce l'alcol.</p>
+        <p class="banner" id="profileIntro" hidden><b>Inserisci i tuoi dati per iniziare.</b></p>
         <section class="card">
           <div class="card-head"><h2>I tuoi dati</h2></div>
           <div class="form">
@@ -601,7 +581,7 @@ th:first-child, td:first-child { text-align: left; }
         </section>
 
         <section class="card">
-          <div class="card-head"><h2>Il tuo fattore personale</h2><span class="hint">Si aggiorna a ogni misura con l'etilometro</span></div>
+          <div class="card-head"><h2>Fattore personale</h2></div>
           <div class="kv" id="factorKv"></div>
           <p class="note" id="factorNote"></p>
           <ul class="list" id="factorList"></ul>
@@ -617,9 +597,9 @@ th:first-child, td:first-child { text-align: left; }
         </section>
 
         <section class="card" id="installCard" hidden>
-          <div class="card-head"><h2>Installa sul telefono</h2><span class="hint">Si apre come un'app, anche senza rete</span></div>
-          <p class="note" style="margin-top:0"><b>iPhone:</b> apri questa pagina in Safari, tocca Condividi e poi «Aggiungi alla schermata Home».</p>
-          <p class="note"><b>Android:</b> apri il menu di Chrome e tocca «Installa app» o «Aggiungi a schermata Home».</p>
+          <div class="card-head"><h2>Installa sul telefono</h2></div>
+          <p class="note" style="margin-top:0"><b>iPhone:</b> in Safari, Condividi e poi «Aggiungi alla schermata Home».</p>
+          <p class="note"><b>Android:</b> dal menu di Chrome, «Installa app».</p>
           <div class="row" style="margin-top:12px"><button class="btn btn-primary" id="btnInstall" type="button" hidden>Installa adesso</button></div>
         </section>
 
@@ -634,6 +614,23 @@ th:first-child, td:first-child { text-align: left; }
             <button class="btn btn-danger" id="btnWipe" type="button">Elimina i miei dati</button>
           </div>
           <p class="note warn" id="wipeNote" hidden></p>
+        </section>
+        <section class="card method">
+          <details class="plain">
+            <summary>Come viene calcolato</summary>
+            <ol id="method"></ol>
+            <p style="margin-top:14px"><b>Fonti</b></p>
+            <ul class="sources">
+            <li><a href="https://www.pubmed.gov/33099270/">Maskell, Jones, Heymsfield, Shapses, Johnston (2020)</a>: l'acqua corporea totale è più affidabile del volume di distribuzione; Forrest per BMI 17–35, Watson oltre.</li>
+            <li><a href="https://www.pubmed.gov/30553124/">Maskell, Jones, Savage, Scott-Ham (2019)</a>: confronto delle equazioni antropometriche con valori misurati.</li>
+            <li><a href="https://link.springer.com/article/10.1007/s004140000154">Seidl, Jensen, Alt (2000)</a>: fattore r individuale da peso e altezza.</li>
+            <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4361698">Searle (2015)</a>: equazioni di Watson e incertezza dei calcoli alcolemici.</li>
+            <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6474506">Jones (2019)</a>: velocità di eliminazione 0,10–0,25 g/L all'ora.</li>
+            <li><a href="https://link.springer.com/content/pdf/10.1186/1472-6904-2-4.pdf">Levitt (2002)</a>: assorbimento in circa 50 minuti a digiuno, circa 3 ore con un pasto.</li>
+            <li><a href="https://www.bps.ac.uk/publishing/our-journals/british-journal-of-clinical-pharmacology/volume-12/issue-5/ethanol-dose-dependent-elimination-michaelis-me">Rangno, Kreeft, Sitar (1981)</a>: eliminazione di Michaelis-Menten, Km 0,03 g/L.</li>
+            <li><a href="https://brocardi.it/codice-della-strada/titolo-v/art186bis.html">Codice della Strada, art. 186 e 186-bis</a>: limiti di legge.</li>
+          </ul>
+          </details>
         </section>
       </div>
     </section>
@@ -1255,16 +1252,13 @@ if (typeof module !== 'undefined') module.exports = BAC;
   }
   function findDrink(id) { for (var i = 0; i < S.drinks.length; i++) if (S.drinks[i].id === id) return S.drinks[i]; return null; }
   function refreshDrinkMeta(now) {
-    var total = 0;
     Array.prototype.forEach.call($('drinks').children, function (li) {
       var d = findDrink(li.dataset.id); if (!d) return;
-      var g = BAC.grams(+d.ml || 0, +d.abv || 0); total += g;
-      li.querySelector('[data-g]').textContent = num(g, 1) + ' g di alcol';
+      var g = BAC.grams(+d.ml || 0, +d.abv || 0);
+      li.querySelector('[data-g]').textContent = num(g, 0) + ' g';
       var tag = dayTag(d.t, now);
       li.querySelector('[data-day]').textContent = 'Ora' + (tag ? ' (' + tag + ')' : '');
     });
-    $('totals').innerHTML = S.drinks.length
-      ? '<span>Alcol puro totale <b class="num">' + num(total, 1) + ' g</b></span><span><b class="num">' + num(total / 12, 1) + '</b> unità alcoliche da 12 g</span>' : '';
   }
   function fillSession() {
     $('stEmpty').checked = S.stomach === 'empty'; $('stSnack').checked = S.stomach === 'snack'; $('stMeal').checked = S.stomach === 'meal';
@@ -1290,58 +1284,53 @@ if (typeof module !== 'undefined') module.exports = BAC;
     $('dangerNote').hidden = true;
     if (r.empty) {
       head = 'Aggiungi quello che hai bevuto';
-      sub = 'Il calcolo parte appena tocchi la prima bevanda.';
-      $('nowBig').textContent = '0,00'; $('nowRange').textContent = '0,00 – 0,00'; $('trend').textContent = '';
-      $('peakBig').textContent = '–'; $('peakK').textContent = 'Picco'; $('peakS').textContent = 'nessun dato'; $('peakBox').classList.remove('rising');
+      sub = '';
+      $('nowBig').textContent = '0,00'; $('nowRange').textContent = '0,00 – 0,00';
+      $('peakBig').textContent = '–'; $('peakK').textContent = 'Picco'; $('peakS').textContent = ''; $('peakBox').classList.remove('rising');
       renderScale(null);
-      $('facts').innerHTML = fact(lim > 0 ? 'Sotto 0,5 g/L' : 'Limite di legge', lim > 0 ? '–' : '0,0 <small>g/L</small>', lim > 0 ? 'limite di legge' : 'per te vale l\'orario «A zero»') + fact('A zero', '–', 'nessun dato') + fact('Alcol puro', '0 <small>g</small>', '0 unità alcoliche');
+      $('facts').innerHTML = fact(lim > 0 ? 'Sotto 0,5 g/L' : 'Limite', lim > 0 ? '–' : '0,0 <small>g/L</small>', '') + fact('A zero', '–', '') + fact('Alcol puro', '0 <small>g</small>', '');
     } else {
-      var c = r.at(now), nxt = r.at(now + 5 * MIN);
+      var c = r.at(now);
       var exAbove = lim > 0 && r.peak.value >= lim, hiAbove = lim > 0 && r.peakHi.value >= lim;
       var zeroEx = when(r.zeroEx, now), zeroHi = when(r.zeroHi, now), legalEx = when(r.legalEx, now), legalHi = when(r.legalHi, now);
       // In evidenza c'è sempre la stima centrale; lo scenario prudenziale è il margine indicato accanto
       if (now < r.t0) {
         label = 'Previsione'; head = 'Le bevande inserite sono nel futuro';
-        sub = 'Il calcolo mostra cosa succederà. ' + (lim > 0 && !exAbove
-          ? 'La stima resta sotto 0,5 g/L e torna a zero alle ' + zeroEx + '.'
-          : 'Secondo la stima, niente guida tra la prima bevanda e le ' + (lim > 0 ? legalEx : zeroEx) + '.');
+        sub = 'A zero alle ' + zeroEx + '.';
       } else if (lim > 0 && exAbove && now < r.legalEx) {
         s = 'crit'; label = 'Non guidare'; head = 'Non guidare prima delle ' + legalEx;
-        sub = 'È l\'ora in cui la stima scende sotto 0,5 g/L. Con margine prudenziale: ' + legalHi + '. A zero alle ' + zeroEx + '.';
+        sub = 'Con margine: ' + legalHi + '. A zero alle ' + zeroEx + '.';
       } else if (lim > 0 && hiAbove && now < r.legalHi) {
         s = 'warn'; label = 'Vicino al limite'; head = 'Stima sotto 0,5 g/L, ma senza margine';
-        sub = 'Potresti essere ancora sopra il limite: con margine prudenziale sei sotto dalle ' + legalHi + '. A zero alle ' + zeroEx + '.';
+        sub = 'Con margine sei sotto dalle ' + legalHi + '. A zero alle ' + zeroEx + '.';
       } else if (lim === 0 && now < r.zeroEx) {
         s = 'crit'; label = 'Non guidare'; head = 'Non guidare prima delle ' + zeroEx;
-        sub = 'Il tuo limite è 0,0 g/L: è l\'ora in cui la stima arriva a zero. Con margine prudenziale: ' + zeroHi + '.';
+        sub = 'Il tuo limite è 0,0 g/L. Con margine: ' + zeroHi + '.';
       } else if (now < r.zeroEx) {
         s = 'warn'; label = 'Sotto il limite, non a zero'; head = 'Sotto 0,5 g/L, ma non ancora a zero';
-        sub = 'Riflessi e attenzione calano già sotto il limite di legge. A zero alle ' + zeroEx + '.';
+        sub = 'A zero alle ' + zeroEx + '.';
       } else if (now < r.zeroHi) {
         s = 'warn'; label = 'A zero secondo la stima'; head = 'A zero dalle ' + zeroEx + ', senza margine';
-        sub = lim === 0 ? 'Il tuo limite è 0,0 g/L: per sicurezza aspetta le ' + zeroHi + ', quando anche lo scenario prudenziale è a zero.'
-          : 'Con margine prudenziale sei a zero dalle ' + zeroHi + '.';
+        sub = 'Con margine dalle ' + zeroHi + '.';
       } else {
         s = 'good'; label = 'A zero'; head = 'A zero dalle ' + zeroEx;
-        sub = 'Anche lo scenario prudenziale è tornato a zero. Se sei stanco o poco lucido, non guidare lo stesso.';
+        sub = 'Se sei stanco, non guidare lo stesso.';
       }
       $('nowBig').textContent = num(c.ex, 2);
       $('nowRange').textContent = num(c.lo, 2) + ' – ' + num(c.hi, 2);
-      var dlt = nxt.ex - c.ex;
-      $('trend').textContent = now < r.t0 ? '' : dlt > 0.003 ? 'In salita: stai ancora assorbendo, il tasso arriverà a ' + num(r.peak.value, 2) + ' g/L' : dlt < -0.003 ? 'In discesa' : (c.ex > 0.005 ? 'Vicino al picco' : '');
       renderScale(c);
       var pk = r.peak, rising = pk.t > now;
       $('peakBig').textContent = num(pk.value, 2);
       $('peakK').textContent = rising ? 'Picco previsto' : 'Picco raggiunto';
-      $('peakS').textContent = 'alle ' + when(pk.t, now) + ' · fino a ' + num(r.peakHi.value, 2) + ' con margine';
+      $('peakS').textContent = 'alle ' + when(pk.t, now);
       $('peakBox').classList.toggle('rising', rising);
       var f2;
-      if (lim === 0) f2 = fact('Limite di legge', '0,0 <small>g/L</small>', 'per te vale l\'orario «A zero»');
-      else if (!hiAbove) f2 = fact('Sotto 0,5 g/L', 'sempre', 'mai sopra il limite, neanche con margine prudenziale');
-      else if (!exAbove) f2 = fact('Sotto 0,5 g/L', 'sempre', 'secondo la stima; con margine prudenziale dalle ' + hm(r.legalHi));
-      else f2 = fact('Sotto 0,5 g/L', hm(r.legalEx), eta(r.legalEx, now) + tagIn(r.legalEx, now) + '; con margine prudenziale ' + hm(r.legalHi));
-      var f3 = fact('A zero', hm(r.zeroEx), eta(r.zeroEx, now) + tagIn(r.zeroEx, now) + '; con margine prudenziale ' + hm(r.zeroHi));
-      var f4 = fact('Alcol puro', num(r.total, 0) + ' <small>g</small>', num(r.total / 12, 1) + ' unità alcoliche');
+      if (lim === 0) f2 = fact('Limite', '0,0 <small>g/L</small>', '');
+      else if (!hiAbove) f2 = fact('Sotto 0,5 g/L', 'sempre', '');
+      else if (!exAbove) f2 = fact('Sotto 0,5 g/L', 'sempre', 'margine ' + hm(r.legalHi));
+      else f2 = fact('Sotto 0,5 g/L', hm(r.legalEx), eta(r.legalEx, now) + tagIn(r.legalEx, now) + ' · margine ' + hm(r.legalHi));
+      var f3 = fact('A zero', hm(r.zeroEx), eta(r.zeroEx, now) + tagIn(r.zeroEx, now) + ' · margine ' + hm(r.zeroHi));
+      var f4 = fact('Alcol puro', num(r.total, 0) + ' <small>g</small>', num(r.total / 12, 1) + ' unità');
       $('facts').innerHTML = f2 + f3 + f4;
       if (r.peakHi.value >= 2.5) {
         $('dangerNote').hidden = false;
@@ -1354,7 +1343,7 @@ if (typeof module !== 'undefined') module.exports = BAC;
     $('legMeas').style.display = S.meas.length ? '' : 'none';
     var first = S.drinks.length ? Math.min.apply(null, S.drinks.map(function (d) { return d.t; })) : null;
     $('sessTitle').textContent = first === null ? 'Nuova serata' : dayDiff(first, now) === 0 ? 'Serata di oggi' : 'Serata di ' + longDate(first);
-    $('sessSub').textContent = first === null ? 'Si salva da sola nel calendario' : S.drinks.length + (S.drinks.length === 1 ? ' bevanda' : ' bevande') + ' dalle ' + hm(first) + ' · salvata nel calendario';
+    $('sessSub').textContent = first === null ? '' : S.drinks.length + (S.drinks.length === 1 ? ' bevanda' : ' bevande') + ' dalle ' + hm(first);
     $('btnNew').hidden = !S.drinks.length;
   }
 
@@ -1455,22 +1444,20 @@ if (typeof module !== 'undefined') module.exports = BAC;
 
   /* ---------- etilometro ---------- */
   var WHY = {
-    early: 'Non usata: troppo vicina all\'ultimo sorso. Aspetta 20 minuti e ripeti.',
-    far: 'Non usata: troppo lontana dalla stima. Controlla bevande e orari, o ripeti la misura.',
-    before: 'Non usata: precede la prima bevanda.'
+    early: 'Scartata: troppo vicina all\'ultimo sorso',
+    far: 'Scartata: troppo lontana dalla stima',
+    before: 'Scartata: precede la prima bevanda'
   };
   function renderMeas(r, now) {
     var list = S.meas.slice().sort(function (a, b) { return a.t - b.t; });
     $('measList').innerHTML = list.map(function (m) {
       return '<li data-mid="' + m.id + '"><div class="grow"><b class="num">' + num(m.value, 2) + ' g/L</b> alle <span class="num">' + when(m.t, now) + '</span>' +
-        (m.ok ? '<small>Usata: le formule davano ' + num(m.value / m.k, 2) + ' g/L, fattore × ' + num(m.k, 2) + '</small>'
+        (m.ok ? '<small>Fattore × ' + num(m.k, 2) + '</small>'
               : '<small class="warn">' + WHY[m.why] + (m.why === 'far' && m.raw ? ' (× ' + num(m.raw, 2) + ')' : '') + '</small>') +
         '</div><button class="x" type="button" data-mdel aria-label="Rimuovi misura">×</button></li>';
     }).join('');
-    var k = r.empty ? kFor(S) : r.k, own = S.meas.some(function (m) { return m.ok; }), n = D.calib.samples.length;
-    $('measSum').textContent = own ? 'Questa serata usa il fattore × ' + num(k, 2) + ' ricavato dalla tua misura. Da ora vale anche per le prossime serate.'
-      : n ? 'Questa serata usa il tuo fattore personale × ' + num(k, 2) + ', ricavato da ' + n + (n === 1 ? ' misura.' : ' misure.')
-      : 'Nessuna misura: il calcolo usa solo le formule.';
+    var n = D.calib.samples.length, own = S.meas.some(function (m) { return m.ok; });
+    $('measSum').textContent = !own && n ? 'Fattore personale in uso: × ' + num(r.empty ? kFor(S) : r.k, 2) : '';
   }
 
   /* ---------- metodo ---------- */
@@ -1501,8 +1488,8 @@ if (typeof module !== 'undefined') module.exports = BAC;
     R = BAC.run(inputFor(S));
     S.sum = R.empty ? null : { start: R.t0, total: R.total, peak: R.peak.value, peakHi: R.peakHi.value, zeroEx: R.zeroEx, zeroHi: R.zeroHi, n: S.drinks.length };
     renderVerdict(R, now, lim);
-    if (tab === 'serata') { renderChart(R, now, lim); renderTable(R, now); renderMethod(R, lim); renderMeas(R, now); refreshDrinkMeta(now); }
-    if (tab === 'profilo') renderProfileTab();
+    if (tab === 'serata') { renderChart(R, now, lim); renderTable(R, now); renderMeas(R, now); refreshDrinkMeta(now); }
+    if (tab === 'profilo') { renderProfileTab(); renderMethod(R, lim); }
     $('ageNote').hidden = !(D.profile.age < 21);
     $('betaVal').textContent = num(D.beta, 2);
   }
@@ -1535,15 +1522,14 @@ if (typeof module !== 'undefined') module.exports = BAC;
       html += '<button type="button" class="day' + (key === today ? ' today' : '') + (key === calSel ? ' sel' : '') + '" data-key="' + key + '" aria-label="' + d + (ss.length ? ', ' + ss.length + ' serate' : '') + '"><span class="day-n num">' + d + '</span>' + mark + '</button>';
     }
     $('calGrid').innerHTML = html;
-    $('calSummary').textContent = count ? count + (count === 1 ? ' serata' : ' serate') + ' questo mese · ' + num(grams, 0) + ' g di alcol (' + num(grams / 12, 1) + ' unità) · picco più alto ' + num(top, 2) + ' g/L'
-      : 'Nessuna serata salvata questo mese';
+    $('calSummary').textContent = count ? count + (count === 1 ? ' serata' : ' serate') + ' · picco più alto ' + num(top, 2) + ' g/L' : 'Nessuna serata';
     var p = calSel.split('-'), selDate = new Date(+p[0], +p[1] - 1, +p[2]).getTime(), list = (map[calSel] || []).slice().sort(function (a, b) { return a.sum.start - b.sum.start; });
     $('calDayTitle').textContent = longDate(selDate).replace(/^./, function (c) { return c.toUpperCase(); });
     $('calDayEmpty').hidden = list.length > 0;
     $('calDayList').innerHTML = list.map(function (s) {
       var u = s.sum, b = band(u.peak);
       return '<li data-sid="' + s.id + '"><div class="grow"><b>Dalle <span class="num">' + hm(u.start) + '</span></b> <span class="mark num" data-b="' + b + '">picco ' + num(u.peak, 2) + ' g/L</span>' +
-        '<small>' + u.n + (u.n === 1 ? ' bevanda' : ' bevande') + ' · ' + num(u.total, 0) + ' g di alcol · a zero alle ' + when(u.zeroEx || u.zeroHi, u.start) + (s.id === D.currentId ? ' · serata aperta' : '') + '</small></div>' +
+        '<small>' + u.n + (u.n === 1 ? ' bevanda' : ' bevande') + ' · a zero alle ' + when(u.zeroEx || u.zeroHi, u.start) + '</small></div>' +
         '<button class="btn" type="button" data-open>Apri</button><button class="x" type="button" data-sdel aria-label="Elimina serata">×</button></li>';
     }).join('');
   }
@@ -1559,19 +1545,17 @@ if (typeof module !== 'undefined') module.exports = BAC;
     $('profileIntro').hidden = D.profileDone; $('btnProfileDone').hidden = D.profileDone;
     var b = BAC.body(validProfile()), k = personalK(), n = D.calib.samples.length;
     $('factorKv').innerHTML =
-      '<div><div class="k">Dalle formule</div><div class="v num">r ' + num(b.r, 3) + '</div><div class="s">equazione di ' + b.method + '</div></div>' +
-      '<div><div class="k">Fattore personale</div><div class="v num">× ' + num(k, 2) + '</div><div class="s">' + (n ? 'da ' + n + (n === 1 ? ' misura' : ' misure') : 'nessuna misura') + '</div></div>' +
-      '<div><div class="k">In uso nei calcoli</div><div class="v num">r ' + num(b.r / k, 3) + '</div><div class="s">' + (n ? (k > 1 ? 'tasso più alto delle formule' : 'tasso più basso delle formule') : 'uguale alle formule') + '</div></div>';
-    $('factorNote').textContent = n ? 'Il fattore è la media delle ultime 5 misure valide. Vale per tutte le serate senza una misura propria.'
-      : 'Quando aggiungi una misura dell\'etilometro in una serata, l\'app confronta il valore letto con quello previsto e corregge il fattore da lì in avanti.';
+      '<div><div class="k">Dalle formule</div><div class="v num">r ' + num(b.r, 3) + '</div></div>' +
+      '<div><div class="k">Etilometro</div><div class="v num">× ' + num(k, 2) + '</div><div class="s">' + (n ? n + (n === 1 ? ' misura' : ' misure') : 'nessuna misura') + '</div></div>' +
+      '<div><div class="k">In uso</div><div class="v num">r ' + num(b.r / k, 3) + '</div></div>';
+    $('factorNote').textContent = n ? '' : 'Si aggiorna quando aggiungi una misura dell\'etilometro in una serata.';
     $('factorList').innerHTML = D.calib.samples.slice(-5).reverse().map(function (x) {
       return '<li><div class="grow"><b class="num">× ' + num(x.k, 2) + '</b><small>misura del ' + new Date(x.t).toLocaleDateString('it-IT', { day: 'numeric', month: 'long' }) + ' alle ' + hm(x.t) + '</small></div></li>';
     }).join('');
-    $('betaNote').textContent = D.betaSamples.length ? 'Misurata con l\'etilometro in ' + D.betaSamples.length + (D.betaSamples.length === 1 ? ' serata.' : ' serate.') + ' Il margine prudenziale usa β diviso 1,2.'
-      : 'Lascia 0,15 se non l\'hai mai misurata: è la media dei bevitori moderati. Il margine prudenziale usa β diviso 1,2.';
+    $('betaNote').textContent = D.betaSamples.length ? 'Misurata con l\'etilometro.' : 'Lascia 0,15 se non l\'hai misurata.';
     $('btnResetCal').hidden = !(n || D.betaSamples.length);
     $('accName').textContent = account.name + (account.email ? ' · ' + account.email : '');
-    $('accMode').textContent = account.mode === 'google' ? 'Accesso con Google. I dati sono nel tuo spazio privato e su questo dispositivo.' : 'Modalità di prova: i dati restano solo su questo dispositivo.';
+    $('accMode').textContent = account.mode === 'google' ? 'Accesso con Google' : 'Modalità di prova: dati solo su questo dispositivo';
     setSync(Cloud.sync || 'ok');
   }
 
