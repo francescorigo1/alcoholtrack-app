@@ -1,0 +1,1793 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calcolatore BAC AlcoholTrack</title>
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="description" content="Stima del tasso alcolemico, del picco e dell'ora in cui torni a zero.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="AlcoholTrack">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+/* Layout: schermate di accesso e termini a colonna stretta; app a schede (Serata, Calendario, Profilo, Gestione).
+   Stile Apple su fondo bianco: riquadri grigio chiaro, caratteri di sistema, vetro solo sulle barre sospese,
+   blu riservato alla curva e ai link. */
+:root {
+  --bg: #ffffff;
+  --card: #f5f5f7;
+  --field: #ffffff;
+  --fill: rgba(118, 118, 128, .12);
+  --glass: rgba(255, 255, 255, .72);
+  --halo: #f5f5f7;
+  --ink: #1d1d1f;
+  --ink-2: #424245;
+  --ink-3: #6e6e73;
+  --line: rgba(0, 0, 0, .1);
+  --accent: #0071e3;
+  --focus: rgba(0, 113, 227, .28);
+  --band: rgba(60, 60, 67, .11);
+  --band-strong: rgba(60, 60, 67, .26);
+  --primary: #1d1d1f; --on-primary: #ffffff;
+  --seg-on: #ffffff;
+  --shade: rgba(0, 0, 0, .16); --shade-2: rgba(0, 0, 0, .06);
+  --tip: rgba(29, 29, 31, .86); --on-tip: #f5f5f7;
+  --good: #1d7a36;   --good-soft: rgba(52, 199, 89, .18);
+  --warn: #9a5700;   --warn-soft: rgba(255, 149, 0, .2);
+  --crit: #c9001c;   --crit-soft: rgba(255, 59, 48, .14);
+  --f-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', 'Segoe UI', Roboto, Arial, sans-serif;
+  --f-round: ui-rounded, 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI', Roboto, Arial, sans-serif;
+  --f-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --r-lg: 24px; --r-md: 16px; --r-sm: 11px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000; --card: #1c1c1e; --field: #2c2c2e; --fill: rgba(118, 118, 128, .26);
+    --glass: rgba(28, 28, 30, .72); --halo: #1c1c1e;
+    --ink: #f5f5f7; --ink-2: #c9c9ce; --ink-3: #98989f; --line: rgba(255, 255, 255, .14);
+    --accent: #2f9bff; --focus: rgba(47, 155, 255, .35);
+    --band: rgba(235, 235, 245, .12); --band-strong: rgba(235, 235, 245, .3);
+    --primary: #f5f5f7; --on-primary: #1d1d1f; --seg-on: #636366;
+    --shade: rgba(0, 0, 0, .6); --shade-2: rgba(0, 0, 0, .3);
+    --tip: rgba(245, 245, 247, .92); --on-tip: #1d1d1f;
+    --good: #30d158; --good-soft: rgba(48, 209, 88, .18);
+    --warn: #ffb340; --warn-soft: rgba(255, 159, 10, .2);
+    --crit: #ff6961; --crit-soft: rgba(255, 69, 58, .2);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #000000; --card: #1c1c1e; --field: #2c2c2e; --fill: rgba(118, 118, 128, .26);
+  --glass: rgba(28, 28, 30, .72); --halo: #1c1c1e;
+  --ink: #f5f5f7; --ink-2: #c9c9ce; --ink-3: #98989f; --line: rgba(255, 255, 255, .14);
+  --accent: #2f9bff; --focus: rgba(47, 155, 255, .35);
+  --band: rgba(235, 235, 245, .12); --band-strong: rgba(235, 235, 245, .3);
+  --primary: #f5f5f7; --on-primary: #1d1d1f; --seg-on: #636366;
+  --shade: rgba(0, 0, 0, .6); --shade-2: rgba(0, 0, 0, .3);
+  --tip: rgba(245, 245, 247, .92); --on-tip: #1d1d1f;
+  --good: #30d158; --good-soft: rgba(48, 209, 88, .18);
+  --warn: #ffb340; --warn-soft: rgba(255, 159, 10, .2);
+  --crit: #ff6961; --crit-soft: rgba(255, 69, 58, .2);
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--f-ui); font-size: 16px; line-height: 1.47; letter-spacing: -.011em;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, p { margin: 0; }
+h1, h2, h3 { text-wrap: balance; }
+button, input, select, textarea { font: inherit; color: inherit; letter-spacing: inherit; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.num { font-variant-numeric: tabular-nums; }
+.ico { width: 24px; height: 24px; flex: none; }
+
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 max(20px, env(safe-area-inset-right)) calc(40px + env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); }
+
+/* Pulsanti */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 42px; border: 1px solid var(--line); background: var(--field); border-radius: 999px;
+  padding: 8px 18px; font-weight: 600; font-size: .92rem; cursor: pointer; white-space: nowrap; text-decoration: none; color: var(--ink);
+  transition: transform .15s, filter .15s, background .15s;
+}
+.btn:hover { background: var(--fill); }
+.btn:active { transform: scale(.97); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-primary { background: var(--primary); border-color: transparent; color: var(--on-primary); }
+.btn-primary:hover { background: var(--primary); filter: brightness(1.2); }
+.btn-primary:disabled:hover { filter: none; }
+.btn-danger { color: var(--crit); }
+.btn-big { min-height: 52px; width: 100%; font-size: 1rem; }
+.linkbtn { border: 0; background: none; padding: 0; color: var(--accent); font-weight: 500; cursor: pointer; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+/* Schermate di accesso e termini */
+.screen { min-height: 78vh; display: flex; align-items: center; justify-content: center; padding: calc(40px + env(safe-area-inset-top)) 0 24px; }
+.panel { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 18px; }
+.panel-wide { max-width: 640px; }
+.brand-name { display: inline-flex; align-items: center; gap: 9px; font-weight: 700; font-size: 1.05rem; letter-spacing: -.02em; white-space: nowrap; }
+.brand-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 4px var(--fill); }
+.hero-title { font-size: clamp(2.1rem, 7vw, 2.9rem); font-weight: 700; letter-spacing: -.045em; line-height: 1.04; }
+.hero-sub { color: var(--ink-2); font-size: 1.05rem; max-width: 34ch; }
+.hero-art { background: var(--card); border-radius: var(--r-lg); padding: 18px 18px 8px; }
+.hero-art svg { display: block; width: 100%; height: auto; }
+.hero-art text { font-family: var(--f-ui); font-size: 11px; fill: var(--ink-3); }
+.fine { font-size: .82rem; color: var(--ink-3); }
+.msg { font-size: .88rem; color: var(--ink-2); background: var(--card); border-radius: var(--r-md); padding: 12px 14px; }
+.msg.warn { color: var(--warn); background: var(--warn-soft); }
+
+.terms-box { background: var(--card); border-radius: var(--r-lg); padding: 20px 22px; max-height: 46vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.terms-box h3 { font-size: .98rem; font-weight: 600; margin-top: 8px; }
+.terms-box h3:first-child { margin-top: 0; }
+.terms-box p { font-size: .92rem; color: var(--ink-2); }
+.checks { display: flex; flex-direction: column; gap: 10px; }
+.check { display: flex; gap: 12px; align-items: flex-start; font-size: .94rem; cursor: pointer; }
+.check input { width: 22px; height: 22px; margin: 1px 0 0; flex: none; accent-color: var(--ink); }
+
+/* Barra in alto e schede */
+.top {
+  position: sticky; top: 0; z-index: 20; margin: 0 -20px 8px; padding: calc(10px + env(safe-area-inset-top)) 20px 10px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: var(--glass); -webkit-backdrop-filter: blur(22px) saturate(180%); backdrop-filter: blur(22px) saturate(180%);
+  border-bottom: 1px solid var(--line);
+}
+.tabs { display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--fill); }
+.tabs a {
+  display: flex; align-items: center; gap: 7px; padding: 7px 15px; border-radius: 999px;
+  font-weight: 600; font-size: .88rem; color: var(--ink-2); text-decoration: none; white-space: nowrap;
+}
+.tabs a .ico { width: 19px; height: 19px; }
+.tabs a[aria-current="page"] { background: var(--seg-on); color: var(--ink); box-shadow: 0 3px 8px -2px var(--shade), 0 1px 1px var(--shade-2); }
+.avatar { width: 38px; height: 38px; border-radius: 50%; border: 0; background: var(--primary); color: var(--on-primary); font-weight: 700; cursor: pointer; flex: none; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+@media (max-width: 780px) {
+  .tabs {
+    position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 30; padding: 5px;
+    background: var(--glass); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--line); box-shadow: 0 14px 34px -10px var(--shade);
+  }
+  .tabs a { flex-direction: column; gap: 1px; font-size: .68rem; padding: 6px 14px; min-width: 68px; }
+  .tabs a .ico { width: 22px; height: 22px; }
+  #scrApp { padding-bottom: 96px; }
+}
+
+.tab-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 16px; flex-wrap: wrap; padding: 18px 0 18px; }
+.tab-title { font-size: clamp(1.7rem, 5vw, 2.2rem); font-weight: 700; letter-spacing: -.04em; line-height: 1.08; }
+.tab-sub { color: var(--ink-3); font-size: .95rem; margin-top: 2px; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.stack { display: flex; flex-direction: column; gap: 18px; }
+.narrow { max-width: 720px; }
+@media (max-width: 940px) {
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .grid > .col { display: contents; }
+  .o1 { order: 1; } .o2 { order: 2; } .o3 { order: 3; } .o4 { order: 4; }
+}
+
+.card { background: var(--card); border-radius: var(--r-lg); padding: 22px; min-width: 0; }
+.card h2 { font-size: 1.12rem; font-weight: 600; letter-spacing: -.02em; }
+.card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.hint { color: var(--ink-3); font-size: .84rem; }
+.alert { background: var(--crit-soft); border: 1px solid var(--crit); border-radius: var(--r-md); padding: 12px 16px; font-size: .92rem; margin-bottom: 18px; }
+.banner { background: var(--card); border-radius: var(--r-md); padding: 14px 16px; font-size: .94rem; color: var(--ink-2); margin-bottom: 18px; }
+
+/* Verdetto */
+.pill { display: inline-flex; align-items: center; gap: 7px; padding: 5px 13px 5px 8px; border-radius: 999px; font-size: .82rem; font-weight: 600; background: var(--fill); color: var(--ink-2); }
+.pill svg { width: 16px; height: 16px; flex: none; }
+.pill[data-s="crit"] { background: var(--crit-soft); color: var(--crit); }
+.pill[data-s="warn"] { background: var(--warn-soft); color: var(--warn); }
+.pill[data-s="good"] { background: var(--good-soft); color: var(--good); }
+.headline { font-size: clamp(1.4rem, 2.7vw, 1.85rem); font-weight: 700; letter-spacing: -.035em; line-height: 1.12; margin-top: 14px; }
+.headline-sub { color: var(--ink-2); font-size: .96rem; margin-top: 6px; max-width: 60ch; }
+.readout { display: flex; align-items: flex-end; gap: 12px 24px; flex-wrap: wrap; margin-top: 22px; }
+.readout-big { font-family: var(--f-round); font-size: clamp(3.6rem, 12vw, 5.2rem); font-weight: 600; line-height: .86; letter-spacing: -.045em; }
+.readout-unit { font-family: var(--f-ui); font-size: 1rem; font-weight: 500; color: var(--ink-3); margin-left: 8px; letter-spacing: -.01em; }
+.readout-side { display: flex; flex-direction: column; gap: 2px; padding-bottom: 4px; font-size: .9rem; color: var(--ink-2); }
+.readout-side b { color: var(--ink); font-weight: 600; }
+
+.scale { margin-top: 20px; }
+.scale-track { position: relative; height: 12px; border-radius: 6px; background: var(--fill); }
+.scale-range { position: absolute; top: 0; bottom: 0; border-radius: 6px; background: var(--band-strong); min-width: 4px; }
+.scale-mark { position: absolute; top: -6px; width: 5px; height: 24px; margin-left: -2.5px; border-radius: 3px; background: var(--ink); box-shadow: 0 0 0 2px var(--halo); }
+.scale-tick { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--halo); }
+.scale-labels { position: relative; height: 18px; margin-top: 8px; font-size: .76rem; color: var(--ink-3); }
+.scale-labels span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.scale-labels span:first-child { transform: none; }
+.scale-labels span:last-child { transform: translateX(-100%); }
+.scale-cap { font-size: .8rem; color: var(--ink-3); margin-top: 4px; }
+
+.facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 22px; border-top: 1px solid var(--line); }
+.fact { padding: 14px 14px 0 0; min-width: 0; }
+.fact + .fact { padding-left: 14px; border-left: 1px solid var(--line); }
+.fact-k { font-size: .8rem; font-weight: 500; color: var(--ink-3); }
+.fact-v { font-family: var(--f-round); font-size: 1.5rem; font-weight: 600; letter-spacing: -.03em; margin-top: 2px; line-height: 1.15; overflow-wrap: anywhere; }
+.fact-v small { font-family: var(--f-ui); font-size: .8rem; font-weight: 500; color: var(--ink-3); letter-spacing: 0; }
+.fact-s { font-size: .82rem; color: var(--ink-2); margin-top: 3px; }
+@media (max-width: 620px) {
+  .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fact:nth-child(3) { padding-left: 0; border-left: 0; }
+  .fact:nth-child(n+3) { border-top: 1px solid var(--line); margin-top: 14px; }
+}
+
+/* Grafico */
+.chart-box { position: relative; }
+.chart-box svg { display: block; width: 100%; height: auto; touch-action: pan-y; }
+.chart-box text { font-family: var(--f-ui); font-size: 11px; fill: var(--ink-3); }
+.tip {
+  position: absolute; pointer-events: none; top: 0; left: 0; z-index: 2;
+  background: var(--tip); color: var(--on-tip); border-radius: 14px; padding: 8px 12px;
+  -webkit-backdrop-filter: blur(16px) saturate(170%); backdrop-filter: blur(16px) saturate(170%);
+  font-size: .8rem; line-height: 1.45; white-space: nowrap; opacity: 0; transition: opacity .1s;
+}
+.tip b { font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 10px; font-size: .82rem; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.legend i { display: inline-block; width: 22px; height: 0; border-top: 2.5px solid var(--accent); border-radius: 2px; }
+.legend i.band { height: 10px; border: 0; background: var(--band-strong); border-radius: 3px; }
+.legend i.hi { border-top: 2px dashed var(--ink-2); }
+.legend i.lim { border-top: 2px dashed var(--crit); }
+.legend i.meas { width: 9px; height: 9px; border: 0; background: var(--ink); transform: rotate(45deg); border-radius: 1px; }
+
+details { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 12px; }
+details > summary { cursor: pointer; font-weight: 600; font-size: .92rem; list-style-position: inside; }
+details > summary::marker { color: var(--ink-3); }
+.table-scroll { overflow-x: auto; margin-top: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: .86rem; }
+th, td { text-align: right; padding: 7px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-weight: 500; color: var(--ink-3); font-size: .8rem; }
+th:first-child, td:first-child { text-align: left; }
+
+/* Bevande */
+.presets { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.tile {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center;
+  border: 1px solid var(--line); background: var(--field); border-radius: var(--r-md); padding: 12px 6px 10px; cursor: pointer; line-height: 1.2;
+  transition: transform .15s, box-shadow .15s;
+}
+.tile:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -10px var(--shade); }
+.tile:active { transform: scale(.96); }
+.tile .ico { width: 30px; height: 30px; }
+.tile b { font-size: .86rem; font-weight: 600; letter-spacing: -.01em; }
+.tile span { font-size: .72rem; color: var(--ink-3); }
+.tile-custom { border-style: dashed; background: transparent; }
+
+.drinks { list-style: none; margin: 16px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.drink { background: var(--field); border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 10px; }
+.drink-top { display: flex; align-items: center; gap: 10px; }
+.drink-ico { width: 38px; height: 38px; border-radius: 12px; background: var(--card); display: flex; align-items: center; justify-content: center; flex: none; }
+.drink-name { flex: 1; min-width: 0; border: 0; background: transparent; font-weight: 600; font-size: 1rem; letter-spacing: -.015em; padding: 2px 0; border-bottom: 1px solid transparent; }
+.drink-name:hover, .drink-name:focus { border-bottom-color: var(--line); outline: none; }
+.drink-g { font-size: .84rem; color: var(--ink-3); white-space: nowrap; }
+.x { border: 0; background: var(--fill); cursor: pointer; width: 30px; height: 30px; border-radius: 50%; color: var(--ink-3); font-size: 1.05rem; line-height: 1; flex: none; }
+.x:hover { background: var(--crit-soft); color: var(--crit); }
+.drink-fields { display: grid; grid-template-columns: 1.7fr 1fr 1fr 1fr; gap: 8px; }
+.drink-fields input[type="time"] { padding-left: 8px; padding-right: 4px; }
+@media (max-width: 520px) { .drink-fields { grid-template-columns: 1fr 1fr; } }
+.fld { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.fld > span { font-size: .8rem; font-weight: 500; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fld input, .fld select, .fld textarea {
+  width: 100%; min-width: 0; min-height: 42px; border: 1px solid var(--line); background: var(--field); border-radius: var(--r-sm);
+  padding: 8px 11px; font-size: .96rem;
+}
+.fld textarea { min-height: 150px; resize: vertical; line-height: 1.45; font-size: .9rem; }
+.fld input:focus, .fld select:focus, .fld textarea:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3.5px var(--focus); }
+.empty { color: var(--ink-3); font-size: .94rem; padding: 16px 0 2px; }
+.totals { display: flex; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); font-size: .9rem; color: var(--ink-2); }
+.totals:empty { display: none; }
+.totals b { color: var(--ink); font-weight: 600; }
+.sep { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 14px; }
+
+.form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 12px; }
+.form .wide { grid-column: 1 / -1; }
+.seg { display: flex; gap: 2px; padding: 3px; border-radius: 12px; background: var(--fill); }
+.seg label { flex: 1; text-align: center; cursor: pointer; position: relative; }
+.seg input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.seg span { display: block; padding: 9px 6px; border-radius: 9px; font-size: .92rem; font-weight: 500; color: var(--ink-2); }
+.seg input:checked + span { background: var(--seg-on); color: var(--ink); font-weight: 600; box-shadow: 0 3px 8px -2px var(--shade), 0 1px 1px var(--shade-2); }
+.seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 1px; }
+.note { font-size: .86rem; color: var(--ink-2); margin-top: 6px; }
+.note.warn { color: var(--warn); font-weight: 500; }
+.range-row { display: flex; align-items: center; gap: 12px; }
+.range-row input[type="range"] { flex: 1; accent-color: var(--ink); min-height: 0; padding: 0; border: 0; box-shadow: none; }
+.inline { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.inline .fld { flex: 1 1 110px; }
+
+.list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.list li { display: flex; align-items: center; gap: 12px; background: var(--field); border: 1px solid var(--line); border-radius: var(--r-md); padding: 10px 12px 10px 14px; }
+.list .grow { flex: 1; min-width: 0; }
+.list b { font-weight: 600; }
+.list small { display: block; color: var(--ink-3); font-size: .82rem; }
+.list small.warn { color: var(--warn); }
+
+.kv { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.kv > div { background: var(--field); border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 14px; min-width: 0; }
+.kv .k { font-size: .8rem; color: var(--ink-3); }
+.kv .v { font-family: var(--f-round); font-size: 1.45rem; font-weight: 600; letter-spacing: -.03em; line-height: 1.2; }
+.kv .s { font-size: .8rem; color: var(--ink-2); }
+@media (max-width: 560px) { .kv { grid-template-columns: 1fr; } }
+
+/* Calendario */
+.cal-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.cal-month { font-size: 1.15rem; font-weight: 600; letter-spacing: -.02em; text-transform: capitalize; }
+.cal-nav { display: flex; gap: 6px; }
+.round { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--field); cursor: pointer; font-size: 1.1rem; line-height: 1; }
+.round:hover { background: var(--fill); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
+.cal-dow { text-align: center; font-size: .76rem; font-weight: 500; color: var(--ink-3); padding: 4px 0; }
+.day {
+  aspect-ratio: 1 / 1; min-height: 46px; border: 1px solid transparent; background: var(--field); border-radius: 14px; cursor: pointer; padding: 4px 2px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+}
+.day.out { background: transparent; color: var(--ink-3); cursor: default; }
+.day-n { font-size: .95rem; font-weight: 500; line-height: 1; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+.day.today .day-n { background: var(--primary); color: var(--on-primary); font-weight: 700; }
+.day.sel { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+.day:not(.out):hover { background: var(--fill); }
+.mark { font-size: .68rem; font-weight: 600; line-height: 1; padding: 3px 6px; border-radius: 999px; background: var(--fill); color: var(--ink-2); }
+.mark[data-b="warn"] { background: var(--warn-soft); color: var(--warn); }
+.mark[data-b="crit"] { background: var(--crit-soft); color: var(--crit); }
+.cal-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 14px; font-size: .8rem; color: var(--ink-2); align-items: center; }
+
+/* Metodo, disclaimer */
+.method p, .method li { font-size: .92rem; color: var(--ink-2); max-width: 72ch; }
+.method ol { margin: 10px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; }
+.method b { color: var(--ink); font-weight: 600; }
+.eq { display: block; font-family: var(--f-mono); font-size: .8rem; color: var(--ink); background: var(--fill); border-radius: var(--r-sm); padding: 9px 12px; margin: 6px 0 2px; overflow-x: auto; white-space: pre; }
+.sources { margin: 10px 0 0; padding-left: 18px; font-size: .86rem; color: var(--ink-2); display: flex; flex-direction: column; gap: 4px; }
+.disclaimer { margin-top: 28px; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 18px 22px; display: flex; flex-direction: column; gap: 6px; }
+.disclaimer h2 { font-size: .95rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.disclaimer h2 svg { width: 18px; height: 18px; color: var(--warn); }
+.disclaimer p { font-size: .86rem; color: var(--ink-2); max-width: 90ch; }
+
+.admin-row { display: grid; grid-template-columns: 1.1fr 1.6fr .8fr .8fr .8fr auto; gap: 8px; align-items: end; }
+@media (max-width: 720px) { .admin-row { grid-template-columns: 1fr 1fr 1fr; background: var(--field); border: 1px solid var(--line); border-radius: var(--r-md); padding: 10px; } }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Accesso -->
+  <section class="screen" id="scrAccess">
+    <div class="panel">
+      <span class="brand-name"><span class="brand-dot"></span>AlcoholTrack</span>
+      <h1 class="hero-title">Sai quando sei a zero.</h1>
+      <p class="hero-sub">Segna cosa bevi: l'app stima il tuo tasso alcolemico, il picco e l'ora in cui torni a zero.</p>
+      <div class="hero-art" aria-hidden="true">
+        <svg viewBox="0 0 400 130">
+          <line x1="8" x2="392" y1="108" y2="108" stroke="var(--line)"/>
+          <line x1="8" x2="392" y1="46" y2="46" stroke="var(--crit)" stroke-width="1.5" stroke-dasharray="6 4"/>
+          <text x="392" y="38" text-anchor="end" style="fill:var(--crit);font-weight:600">limite 0,5 g/L</text>
+          <path d="M8 108 C40 108 52 30 110 22 C160 16 200 60 392 104 L392 108 C250 108 190 108 150 96 C110 84 90 70 70 80 C50 90 40 108 8 108Z" fill="var(--band)"/>
+          <path d="M8 108 C44 108 56 58 104 54 C150 50 190 84 300 107 L392 108" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="104" cy="54" r="5" fill="var(--accent)" stroke="var(--halo)" stroke-width="2"/>
+          <text x="114" y="48" style="fill:var(--ink);font-weight:600">picco</text>
+          <text x="300" y="124" text-anchor="middle" style="fill:var(--ink);font-weight:600">a zero</text>
+        </svg>
+      </div>
+      <button class="btn btn-primary btn-big" id="btnGoogle" type="button" disabled>Accedi con Google</button>
+      <button class="btn btn-big" id="btnLocal" type="button" hidden>Prova senza account, su questo dispositivo</button>
+      <p class="msg" id="accessNote" hidden></p>
+      <p class="fine">Dopo il primo accesso resti collegato su questo dispositivo. I tuoi dati sono visibili solo a te.</p>
+    </div>
+  </section>
+
+  <!-- Termini e condizioni -->
+  <section class="screen" id="scrTerms" hidden>
+    <div class="panel panel-wide">
+      <span class="brand-name"><span class="brand-dot"></span>AlcoholTrack</span>
+      <h1 class="tab-title">Termini e condizioni</h1>
+      <p class="hint" id="termsMeta"></p>
+      <div class="terms-box" id="termsBox" tabindex="0"></div>
+      <div class="checks" id="termsChecks">
+        <label class="check"><input type="checkbox" id="tAge"><span>Ho almeno 18 anni.</span></label>
+        <label class="check"><input type="checkbox" id="tTerms"><span>Ho letto e accetto i termini e condizioni. Ho capito che l'app fornisce una stima e non va usata per decidere se guidare.</span></label>
+        <label class="check"><input type="checkbox" id="tData"><span>Acconsento al salvataggio dei miei dati (peso, altezza, età, bevande e misure) per far funzionare l'app.</span></label>
+      </div>
+      <div class="row">
+        <button class="btn btn-primary" id="btnAccept" type="button" disabled>Accetta e continua</button>
+        <button class="btn" id="btnDecline" type="button">Non accetto, esci</button>
+        <button class="btn" id="btnTermsClose" type="button" hidden>Chiudi</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- App -->
+  <div id="scrApp" hidden>
+    <header class="top">
+      <span class="brand-name"><span class="brand-dot"></span>AlcoholTrack</span>
+      <nav class="tabs" id="tabs" aria-label="Sezioni"></nav>
+      <a class="avatar" id="avatar" href="#profilo" aria-label="Profilo e account"></a>
+    </header>
+
+    <!-- Serata -->
+    <section id="tab-serata">
+      <div class="tab-head">
+        <div><h1 class="tab-title" id="sessTitle">Nuova serata</h1><p class="tab-sub" id="sessSub"></p></div>
+        <button class="btn" id="btnNew" type="button">Nuova serata</button>
+      </div>
+      <div class="alert" id="dangerNote" hidden></div>
+      <div class="grid">
+        <div class="col">
+          <section class="card o1" aria-live="polite">
+            <span class="pill" id="pill" data-s="none"></span>
+            <p class="headline" id="headline"></p>
+            <p class="headline-sub" id="headlineSub"></p>
+            <div class="readout">
+              <div class="readout-big num"><span id="nowBig">0,00</span><span class="readout-unit">g/L adesso</span></div>
+              <div class="readout-side">
+                <span>Intervallo plausibile <b class="num" id="nowRange">0,00 – 0,00</b></span>
+                <span id="trend"></span>
+              </div>
+            </div>
+            <div class="scale" aria-hidden="true">
+              <div class="scale-track" id="scaleTrack"></div>
+              <div class="scale-labels" id="scaleLabels"></div>
+              <p class="scale-cap">Soglie dell'art. 186 del Codice della Strada: oltre 0,5 sanzione amministrativa, oltre 0,8 reato, oltre 1,5 fascia più grave.</p>
+            </div>
+            <div class="facts" id="facts"></div>
+          </section>
+
+          <section class="card o3">
+            <div class="card-head"><h2>Curva del tasso alcolemico</h2><span class="hint">g/L di sangue nel tempo</span></div>
+            <div class="chart-box" id="chartBox">
+              <div class="tip" id="tip"></div>
+              <div id="chart"></div>
+            </div>
+            <div class="legend">
+              <span><i></i>Stima centrale</span>
+              <span><i class="band"></i>Intervallo plausibile</span>
+              <span><i class="hi"></i>Scenario prudenziale (margine)</span>
+              <span id="legLimit"><i class="lim"></i>Limite di legge</span>
+              <span id="legMeas"><i class="meas"></i>Misura dell'etilometro</span>
+            </div>
+            <details>
+              <summary>Valori ogni 30 minuti</summary>
+              <div class="table-scroll"><table id="table"></table></div>
+            </details>
+          </section>
+        </div>
+        <div class="col">
+          <section class="card o2">
+            <div class="card-head"><h2>Cosa hai bevuto</h2><span class="hint">Tocca una bevanda per aggiungerla adesso</span></div>
+            <div class="presets" id="presets"></div>
+            <ul class="drinks" id="drinks"></ul>
+            <p class="empty" id="drinksEmpty" hidden>Ancora niente. Tocca una bevanda qui sopra: potrai correggere ora e quantità.</p>
+            <div class="sep">
+              <div class="fld">
+                <span>Stomaco quando hai iniziato a bere</span>
+                <div class="seg" role="radiogroup" aria-label="Stomaco">
+                  <label><input type="radio" name="stomach" id="stEmpty" value="empty"><span>Digiuno</span></label>
+                  <label><input type="radio" name="stomach" id="stSnack" value="snack"><span>Spuntino</span></label>
+                  <label><input type="radio" name="stomach" id="stMeal" value="meal"><span>Pasto completo</span></label>
+                </div>
+              </div>
+            </div>
+            <div class="totals" id="totals"></div>
+          </section>
+
+          <section class="card o4">
+            <div class="card-head"><h2>Hai un etilometro?</h2><span class="hint">Una misura reale corregge il tuo fattore</span></div>
+            <div class="inline">
+              <label class="fld"><span>Valore letto (g/L)</span><input class="num" type="number" id="measVal" min="0" max="4" step="0.01" inputmode="decimal" placeholder="0,00"></label>
+              <label class="fld"><span>Ora della misura</span><input class="num" type="time" id="measTime"></label>
+              <button class="btn btn-primary" id="btnMeas" type="button">Aggiungi misura</button>
+            </div>
+            <p class="note">Soffia almeno 20 minuti dopo l'ultimo sorso, altrimenti l'alcol in bocca falsa la lettura.</p>
+            <p class="note warn" id="measErr" hidden></p>
+            <ul class="list" id="measList"></ul>
+            <p class="note" id="measSum"></p>
+          </section>
+        </div>
+      </div>
+
+      <section class="card method" style="margin-top:18px">
+        <div class="card-head"><h2>Come viene calcolato</h2><span class="hint">Con i tuoi numeri</span></div>
+        <p>Nessuna formula restituisce il tasso reale: due persone uguali sulla carta possono differire del 10–20 %, e lo scarto cresce col passare delle ore. Per questo accanto a ogni stima trovi un intervallo e un orario con margine prudenziale.</p>
+        <details>
+          <summary>Formule e parametri</summary>
+          <ol id="method"></ol>
+        </details>
+        <details>
+          <summary>Fonti</summary>
+          <ul class="sources">
+            <li><a href="https://www.pubmed.gov/33099270/">Maskell, Jones, Heymsfield, Shapses, Johnston (2020)</a>: l'acqua corporea totale è più affidabile del volume di distribuzione; Forrest per BMI 17–35, Watson oltre.</li>
+            <li><a href="https://www.pubmed.gov/30553124/">Maskell, Jones, Savage, Scott-Ham (2019)</a>: confronto delle equazioni antropometriche con valori misurati.</li>
+            <li><a href="https://link.springer.com/article/10.1007/s004140000154">Seidl, Jensen, Alt (2000)</a>: fattore r individuale da peso e altezza.</li>
+            <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4361698">Searle (2015)</a>: equazioni di Watson e incertezza dei calcoli alcolemici.</li>
+            <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6474506">Jones (2019)</a>: velocità di eliminazione 0,10–0,25 g/L all'ora.</li>
+            <li><a href="https://link.springer.com/content/pdf/10.1186/1472-6904-2-4.pdf">Levitt (2002)</a>: assorbimento in circa 50 minuti a digiuno, circa 3 ore con un pasto.</li>
+            <li><a href="https://www.bps.ac.uk/publishing/our-journals/british-journal-of-clinical-pharmacology/volume-12/issue-5/ethanol-dose-dependent-elimination-michaelis-me">Rangno, Kreeft, Sitar (1981)</a>: eliminazione di Michaelis-Menten, Km 0,03 g/L.</li>
+            <li><a href="https://brocardi.it/codice-della-strada/titolo-v/art186bis.html">Codice della Strada, art. 186 e 186-bis</a>: limiti di legge.</li>
+          </ul>
+        </details>
+      </section>
+    </section>
+
+    <!-- Calendario -->
+    <section id="tab-calendario" hidden>
+      <div class="tab-head">
+        <div><h1 class="tab-title">Calendario</h1><p class="tab-sub" id="calSummary"></p></div>
+      </div>
+      <div class="grid">
+        <div class="col">
+          <section class="card">
+            <div class="cal-head">
+              <span class="cal-month" id="calMonth"></span>
+              <div class="cal-nav">
+                <button class="btn" id="calToday" type="button">Oggi</button>
+                <button class="round" id="calPrev" type="button" aria-label="Mese precedente">‹</button>
+                <button class="round" id="calNext" type="button" aria-label="Mese successivo">›</button>
+              </div>
+            </div>
+            <div class="cal-grid" id="calGrid"></div>
+            <div class="cal-legend">
+              <span>Sul giorno: picco stimato in g/L</span>
+              <span class="mark">sotto 0,5</span>
+              <span class="mark" data-b="warn">0,5 – 0,8</span>
+              <span class="mark" data-b="crit">oltre 0,8</span>
+            </div>
+          </section>
+        </div>
+        <div class="col">
+          <section class="card">
+            <div class="card-head"><h2 id="calDayTitle"></h2></div>
+            <ul class="list" id="calDayList" style="margin-top:0"></ul>
+            <p class="empty" id="calDayEmpty" hidden>Nessuna serata salvata in questo giorno.</p>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <!-- Profilo -->
+    <section id="tab-profilo" hidden>
+      <div class="tab-head">
+        <div><h1 class="tab-title">Profilo</h1><p class="tab-sub">I calcoli partono da questi dati</p></div>
+      </div>
+      <div class="stack narrow">
+        <p class="banner" id="profileIntro" hidden><b>Prima cosa: i tuoi dati.</b> Servono per calcolare quanta acqua ha il tuo corpo, cioè quanto si diluisce l'alcol.</p>
+        <section class="card">
+          <div class="card-head"><h2>I tuoi dati</h2></div>
+          <div class="form">
+            <div class="fld wide">
+              <span>Sesso biologico</span>
+              <div class="seg" role="radiogroup" aria-label="Sesso biologico">
+                <label><input type="radio" name="sex" id="sexM" value="M"><span>Uomo</span></label>
+                <label><input type="radio" name="sex" id="sexF" value="F"><span>Donna</span></label>
+              </div>
+            </div>
+            <label class="fld"><span>Età</span><input class="num" type="number" id="age" min="18" max="99" step="1" inputmode="numeric"></label>
+            <label class="fld"><span>Peso (kg)</span><input class="num" type="number" id="weight" min="40" max="200" step="0.5" inputmode="decimal"></label>
+            <label class="fld"><span>Altezza (cm)</span><input class="num" type="number" id="height" min="140" max="215" step="1" inputmode="numeric"></label>
+            <label class="fld wide"><span>Tipo di conducente</span>
+              <select id="category">
+                <option value="std">Ordinario: limite 0,5 g/L</option>
+                <option value="novice">Neopatentato (primi 3 anni): limite 0,0 g/L</option>
+                <option value="pro">Professionale: limite 0,0 g/L</option>
+              </select>
+            </label>
+            <p class="note warn wide" id="ageNote" hidden>Sotto i 21 anni il limite è 0,0 g/L qualunque sia la patente (art. 186-bis).</p>
+          </div>
+          <div class="row" style="margin-top:16px"><button class="btn btn-primary" id="btnProfileDone" type="button" hidden>Salva e inizia</button></div>
+        </section>
+
+        <section class="card">
+          <div class="card-head"><h2>Il tuo fattore personale</h2><span class="hint">Si aggiorna a ogni misura con l'etilometro</span></div>
+          <div class="kv" id="factorKv"></div>
+          <p class="note" id="factorNote"></p>
+          <ul class="list" id="factorList"></ul>
+          <details>
+            <summary>Velocità di smaltimento</summary>
+            <div class="fld" style="margin-top:10px">
+              <span>β atteso (g/L all'ora)</span>
+              <div class="range-row"><input type="range" id="beta" min="0.10" max="0.25" step="0.01"><b class="num" id="betaVal">0,15</b></div>
+            </div>
+            <p class="note" id="betaNote"></p>
+          </details>
+          <div class="row" style="margin-top:14px"><button class="btn" id="btnResetCal" type="button">Azzera taratura</button></div>
+        </section>
+
+        <section class="card" id="installCard" hidden>
+          <div class="card-head"><h2>Installa sul telefono</h2><span class="hint">Si apre come un'app, anche senza rete</span></div>
+          <p class="note" style="margin-top:0"><b>iPhone:</b> apri questa pagina in Safari, tocca Condividi e poi «Aggiungi alla schermata Home».</p>
+          <p class="note"><b>Android:</b> apri il menu di Chrome e tocca «Installa app» o «Aggiungi a schermata Home».</p>
+          <div class="row" style="margin-top:12px"><button class="btn btn-primary" id="btnInstall" type="button" hidden>Installa adesso</button></div>
+        </section>
+
+        <section class="card">
+          <div class="card-head"><h2>Account</h2></div>
+          <p id="accName" style="font-weight:600"></p>
+          <p class="hint" id="accMode"></p>
+          <p class="hint" id="syncState"></p>
+          <div class="row" style="margin-top:14px">
+            <button class="btn" id="btnLogout" type="button">Esci</button>
+            <button class="btn" id="btnTermsView" type="button">Termini e condizioni</button>
+            <button class="btn btn-danger" id="btnWipe" type="button">Elimina i miei dati</button>
+          </div>
+          <p class="note warn" id="wipeNote" hidden></p>
+        </section>
+      </div>
+    </section>
+
+    <!-- Gestione (sviluppatore) -->
+    <section id="tab-gestione" hidden>
+      <div class="tab-head">
+        <div><h1 class="tab-title">Gestione</h1><p class="tab-sub" id="admSub"></p></div>
+      </div>
+      <div class="stack">
+        <section class="card">
+          <div class="card-head"><h2>Stato dell'app</h2></div>
+          <div class="kv" id="admKv"></div>
+          <p class="note" id="admNote"></p>
+        </section>
+        <section class="card">
+          <div class="card-head"><h2>Catalogo bevande</h2><span class="hint">Quello che gli utenti vedono in «Cosa hai bevuto»</span></div>
+          <div class="stack" id="admPresets" style="gap:8px"></div>
+          <div class="row" style="margin-top:14px">
+            <button class="btn btn-primary" id="admAdd" type="button">Aggiungi bevanda</button>
+            <button class="btn" id="admReset" type="button">Ripristina predefinite</button>
+          </div>
+        </section>
+        <section class="card">
+          <div class="card-head"><h2>Termini e condizioni</h2><span class="hint">Cambiando versione, tutti dovranno accettarli di nuovo</span></div>
+          <div class="stack" style="gap:12px">
+            <label class="fld" style="max-width:200px"><span>Versione</span><input type="text" id="admTermsVer" maxlength="12"></label>
+            <label class="fld"><span>Testo (le righe che iniziano con ## sono titoli)</span><textarea id="admTermsText" rows="12"></textarea></label>
+            <label class="fld"><span>Disclaimer a fondo pagina</span><textarea id="admDisc" rows="4" style="min-height:90px"></textarea></label>
+            <div class="row"><button class="btn btn-primary" id="admSave" type="button">Pubblica testi</button><span class="hint" id="admSaved"></span></div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <footer class="disclaimer">
+    <h2><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 1.2 15.5 14.5H.5z"/><path d="M8 6v4M8 11.6v1.2" stroke="#fff" stroke-width="1.6"/></svg>Avvertenza</h2>
+    <p id="discText"></p>
+  </footer>
+</div>
+
+<script>
+/* ======================================================================
+   CONFIGURAZIONE (unica parte da modificare a mano)
+   firebase:    configurazione del progetto Firebase «alcoholtrack» (accesso con
+                Google e salvataggio dei dati). Non è un segreto: la sicurezza
+                dipende dalle regole Firestore. Con firebase: null l'app torna in
+                modalità di prova, con i dati solo sul dispositivo.
+   La scheda «Gestione» compare da sola a chi è indicato come sviluppatore
+   nelle regole Firestore: nessuna email va scritta in questo file.
+   ====================================================================== */
+window.APP_CONFIG = {
+  firebase: {
+    apiKey: "AIzaSyAAt9qTbGq930G0hg1Xw6fSx00hZmNa2KQ",
+    authDomain: "alcoholtrack.firebaseapp.com",
+    projectId: "alcoholtrack",
+    storageBucket: "alcoholtrack.firebasestorage.app",
+    messagingSenderId: "650096258254",
+    appId: "1:650096258254:web:2a46870486c5a59852f49f"
+  }
+};
+</script>
+<script>
+/* AlcoholTrack — motore di calcolo BAC (funzioni pure, nessun accesso al DOM) */
+var BAC = (function () {
+  'use strict';
+
+  var ETH_DENSITY = 0.789;   // g/mL, densità dell'etanolo
+  var BLOOD_WATER = 0.80;    // frazione d'acqua nel sangue (Watson, Forrest)
+  var KM = 0.03;             // g/L, costante di Michaelis-Menten (Rangno 1981)
+  var VD_SPREAD = 0.12;      // ±12 %, errore tipico delle equazioni TBW (Maskell 2020)
+  var C_REF = 0.5;           // g/L, concentrazione a cui la velocità di eliminazione vale esattamente β
+  var BETA_SPREAD = 1.2;     // lo scenario prudenziale smaltisce 1,2 volte più lentamente (β/1,2), l'ottimistico 1,2 volte più in fretta
+  var BETA_MIN = 0.10, BETA_MAX = 0.25;   // g/L/h, estremi dell'intervallo forense (Jones)
+  var ZERO = 0.005;          // g/L, sotto questa soglia un etilometro a 2 decimali legge 0,00
+  var MAX_MIN = 72 * 60;
+
+  // Stato dello stomaco: ka (1/h) e frazione assorbita F per i tre scenari
+  var STOMACH = {
+    empty: { ka: 3.6, F: 0.90, Fhi: 0.95, Flo: 0.85, label: 'Digiuno' },
+    snack: { ka: 2.0, F: 0.85, Fhi: 0.90, Flo: 0.80, label: 'Spuntino' },
+    meal:  { ka: 1.0, F: 0.80, Fhi: 0.85, Flo: 0.75, label: 'Pasto completo' }
+  };
+
+  function betaSlow(b) { return Math.max(BETA_MIN, b / BETA_SPREAD); }
+  function betaFast(b) { return Math.min(BETA_MAX, b * BETA_SPREAD); }
+  function grams(ml, abv) { return ml * (abv / 100) * ETH_DENSITY; }
+
+  function bmi(p) { var m = p.height / 100; return p.weight / (m * m); }
+
+  function tbwWatson(p) {
+    return p.sex === 'M'
+      ? 2.447 - 0.09516 * p.age + 0.1074 * p.height + 0.3362 * p.weight
+      : -2.097 + 0.1069 * p.height + 0.2466 * p.weight;
+  }
+
+  function tbwForrest(p) {
+    var b = bmi(p);
+    var fat = p.sex === 'M' ? 1.340 * b - 12.469 : 1.371 * b - 3.467;
+    return 0.724 * p.weight * (100 - fat) / 100;
+  }
+
+  function rSeidl(p) {
+    return p.sex === 'M'
+      ? 0.31608 - 0.004821 * p.weight + 0.004632 * p.height
+      : 0.31223 - 0.006446 * p.weight + 0.004466 * p.height;
+  }
+
+  // Forrest per BMI 17–35, Watson fuori da questo intervallo (Maskell et al. 2020)
+  function body(p) {
+    var b = bmi(p);
+    var useForrest = b >= 17 && b <= 35;
+    var w = tbwWatson(p), f = tbwForrest(p);
+    var tbw = useForrest ? f : w;
+    return {
+      bmi: b,
+      method: useForrest ? 'Forrest' : 'Watson',
+      tbw: tbw,
+      vd: tbw / BLOOD_WATER,
+      r: tbw / (BLOOD_WATER * p.weight),
+      rWatson: w / (BLOOD_WATER * p.weight),
+      rForrest: f / (BLOOD_WATER * p.weight),
+      rSeidl: rSeidl(p)
+    };
+  }
+
+  /* Integra con Runge-Kutta 4, passo 1 minuto:
+       dG/dt = I(t) − ka·G
+       dC/dt = F·ka·G / Vd − Vmax·C / (Km + C),  Vmax = β·(1 + Km/0,5): a 0,5 g/L la discesa vale β
+     drinks: [{start, dur, grams}] in minuti dall'origine. Restituisce C (g/L) per minuto. */
+  function simulate(drinks, q, n) {
+    var h = 1 / 60, C = new Float64Array(n + 1), g = 0, c = 0, i, j;
+    var ka = q.ka, k1 = q.F * q.ka / q.vd, beta = q.beta * (1 + KM / C_REF);
+    function dc(gg, cc) { cc = cc > 0 ? cc : 0; return k1 * gg - beta * cc / (KM + cc); }
+    for (i = 0; i < n; i++) {
+      var tm = i + 0.5, I = 0;
+      for (j = 0; j < drinks.length; j++) {
+        var d = drinks[j];
+        if (tm >= d.start && tm < d.start + d.dur) I += d.grams / (d.dur / 60);
+      }
+      var a1 = I - ka * g,                 b1 = dc(g, c);
+      var a2 = I - ka * (g + h / 2 * a1),  b2 = dc(g + h / 2 * a1, c + h / 2 * b1);
+      var a3 = I - ka * (g + h / 2 * a2),  b3 = dc(g + h / 2 * a2, c + h / 2 * b2);
+      var a4 = I - ka * (g + h * a3),      b4 = dc(g + h * a3, c + h * b3);
+      g += h / 6 * (a1 + 2 * a2 + 2 * a3 + a4);
+      c += h / 6 * (b1 + 2 * b2 + 2 * b3 + b4);
+      if (c < 0) c = 0;
+      C[i + 1] = c;
+    }
+    return C;
+  }
+
+  function lastAbove(C, thr, n) {
+    for (var i = n; i >= 0; i--) if (C[i] >= thr) return i + 1;
+    return 0;
+  }
+
+  /* input:
+       profile {sex, age, weight, height}, stomach 'empty'|'snack'|'meal',
+       beta (g/L/h atteso), limit (g/L),
+       drinks [{t (ms), ml, abv, dur (min)}],
+       meas {t (ms), value (g/L)} opzionale */
+  function run(input) {
+    var p = input.profile, st = STOMACH[input.stomach] || STOMACH.empty;
+    var bd = body(p);
+    var list = (input.drinks || []).filter(function (d) { return d.ml > 0 && d.abv > 0; });
+    var out = { body: bd, stomach: st, empty: list.length === 0, km: KM, zero: ZERO, limit: input.limit };
+    if (out.empty) return out;
+
+    var t0 = Math.min.apply(null, list.map(function (d) { return d.t; }));
+    t0 = Math.floor(t0 / 60000) * 60000;
+    var ds = list.map(function (d) {
+      return {
+        start: Math.round((d.t - t0) / 60000),
+        dur: Math.max(1, Math.round(d.dur || 1)),
+        grams: grams(d.ml, d.abv)
+      };
+    });
+    var total = ds.reduce(function (s, d) { return s + d.grams; }, 0);
+    var lastEnd = Math.max.apply(null, ds.map(function (d) { return d.start + d.dur; }));
+    var beta = input.beta || 0.15;
+
+    // Fattore personale k (da etilometro): le concentrazioni scalano di k, cioè Vd effettivo = Vd / k
+    var k = input.k > 0 ? Math.min(2, Math.max(0.5, input.k)) : 1;
+    var vd = bd.vd / k;
+
+    var qE = { vd: vd, beta: beta, F: st.F, ka: st.ka };
+    var qH = { vd: vd * (1 - VD_SPREAD), beta: betaSlow(beta), F: st.Fhi, ka: st.ka };
+    var qL = { vd: vd * (1 + VD_SPREAD), beta: betaFast(beta), F: st.Flo, ka: st.ka };
+
+    var hi = simulate(ds, qH, MAX_MIN);
+    var n = Math.min(MAX_MIN, Math.max(lastAbove(hi, 0.001, MAX_MIN), lastEnd) + 30);
+    var ex = simulate(ds, qE, n), lo = simulate(ds, qL, n);
+
+    function peak(C) {
+      var m = 0, at = 0;
+      for (var i = 0; i <= n; i++) if (C[i] > m) { m = C[i]; at = i; }
+      return { value: m, t: t0 + at * 60000 };
+    }
+    function when(C, thr) { return t0 + lastAbove(C, thr, n) * 60000; }
+    function at(C, t) {
+      var x = (t - t0) / 60000;
+      if (x <= 0) return 0;
+      if (x >= n) return C[n];
+      var i = Math.floor(x), f = x - i;
+      return C[i] * (1 - f) + C[i + 1] * f;
+    }
+
+    var limit = input.limit > 0 ? input.limit : 0;
+    out.t0 = t0; out.n = n; out.total = total; out.lastEnd = t0 + lastEnd * 60000;
+    out.ex = ex; out.hi = hi.subarray(0, n + 1); out.lo = lo;
+    out.params = { exp: qE, hi: qH, lo: qL };
+    out.k = k;
+    out.peak = peak(ex); out.peakHi = peak(out.hi); out.peakLo = peak(lo);
+    out.zeroHi = when(out.hi, ZERO); out.zeroEx = when(ex, ZERO);
+    out.legalHi = limit > 0 ? when(out.hi, limit) : out.zeroHi;
+    out.legalEx = limit > 0 ? when(ex, limit) : out.zeroEx;
+    out.at = function (t) { return { ex: at(ex, t), hi: at(out.hi, t), lo: at(lo, t) }; };
+    return out;
+  }
+
+  /* Taratura: dato un valore misurato (g/L) all'istante meas.t, trova il fattore k per cui la curva
+     attesa calcolata dalle formule (k = 1) passa per la misura. */
+  function calibrate(input, meas) {
+    var p = input.profile, st = STOMACH[input.stomach] || STOMACH.empty;
+    var list = (input.drinks || []).filter(function (d) { return d.ml > 0 && d.abv > 0; });
+    if (!list.length || !meas || !(meas.value > 0)) return { invalid: true };
+    var bd = body(p), beta = input.beta || 0.15;
+    var t0 = Math.floor(Math.min.apply(null, list.map(function (d) { return d.t; })) / 60000) * 60000;
+    var ds = list.map(function (d) {
+      return { start: Math.round((d.t - t0) / 60000), dur: Math.max(1, Math.round(d.dur || 1)), grams: grams(d.ml, d.abv) };
+    });
+    var lastEnd = Math.max.apply(null, ds.map(function (d) { return d.start + d.dur; }));
+    var im = Math.round((meas.t - t0) / 60000);
+    if (im <= 0 || im >= MAX_MIN) return { invalid: true };
+    var k = 1, predicted = null;
+    for (var it = 0; it < 12; it++) {
+      var Ct = simulate(ds, { vd: bd.vd / k, beta: beta, F: st.F, ka: st.ka }, im);
+      if (it === 0) predicted = Ct[im];
+      if (Ct[im] <= 1e-6) break;
+      k *= meas.value / Ct[im];
+      if (k < 0.3) { k = 0.3; break; }
+      if (k > 3) { k = 3; break; }
+    }
+    var raw = k;
+    k = Math.min(1.6, Math.max(0.6, k));
+    return { invalid: false, k: k, raw: raw, clamped: raw !== k, early: im < lastEnd + 20, predicted: predicted, afterEnd: im - lastEnd };
+  }
+
+  return {
+    run: run, calibrate: calibrate, simulate: simulate, body: body, grams: grams,
+    tbwWatson: tbwWatson, tbwForrest: tbwForrest, rSeidl: rSeidl,
+    STOMACH: STOMACH, KM: KM, ZERO: ZERO, VD_SPREAD: VD_SPREAD, betaSlow: betaSlow, betaFast: betaFast,
+    ETH_DENSITY: ETH_DENSITY, BLOOD_WATER: BLOOD_WATER
+  };
+})();
+if (typeof module !== 'undefined') module.exports = BAC;
+</script>
+<script>
+(function () {
+  'use strict';
+  var CFG = window.APP_CONFIG || {};
+  var MIN = 60000, HOUR = 3600000;
+  var FB_BASE = 'https://www.gstatic.com/firebasejs/10.12.2/';
+
+  /* ---------- icone ---------- */
+  var ICONS = {
+    beer: '<path d="M6 8h9v11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z"/><path d="M15 10.5h1.5a2.5 2.5 0 0 1 2.5 2.5v1.5a2.5 2.5 0 0 1-2.5 2.5H15"/><path d="M6 8a2.6 2.6 0 0 1 .9-5A3.2 3.2 0 0 1 12.6 3 2.6 2.6 0 0 1 15 8"/><path d="M9.2 12v5M11.8 12v5"/>',
+    pint: '<path d="M7 3h10l-1 16.2a2 2 0 0 1-2 1.8h-4a2 2 0 0 1-2-1.8z"/><path d="M7.3 8h9.4"/>',
+    bottle: '<path d="M10 2.5h4V6l2 3.2V19a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9.2L10 6z"/><path d="M8 12.5h8M8 17h8"/>',
+    wine: '<path d="M7.6 3h8.8c.7 4.2-.2 9-4.4 9S6.9 7.2 7.6 3z"/><path d="M12 12v8.5M8.5 20.5h7M7.3 7.2h9.4"/>',
+    flute: '<path d="M9.4 2.5h5.2c.5 4.5-.3 9.6-2.6 11-2.3-1.4-3.1-6.5-2.6-11z"/><path d="M12 13.5v7M9 20.5h6M12 6.5v.01M11 9.5v.01"/>',
+    spritz: '<path d="M6.3 5h11.4c.9 4.3-1.2 8.8-5.7 8.8S5.4 9.3 6.3 5z"/><path d="M12 13.8v6.7M8.5 20.5h7M14.5 5l2-3.2M8.6 8.2a2.6 2.6 0 0 0 4.4 0"/>',
+    highball: '<path d="M7 3.5h10l-1 15.7a2 2 0 0 1-2 1.8h-4a2 2 0 0 1-2-1.8z"/><path d="M7.4 9h9.2M13.5 9l2.8-7M9.8 12.2h2.6v2.6H9.8z"/>',
+    rocks: '<path d="M5.5 7h13l-1.1 12.2a2 2 0 0 1-2 1.8H8.6a2 2 0 0 1-2-1.8z"/><path d="M6 12h12M9 14.5h3v3H9zM14 3c1.6.6 2.6 2 2.6 4"/>',
+    shot: '<path d="M8 6h8l-.9 12.6a1.5 1.5 0 0 1-1.5 1.4h-3.2a1.5 1.5 0 0 1-1.5-1.4z"/><path d="M8.3 10.5h7.4"/>',
+    liqueur: '<path d="M8.5 5.5h7v4a3.5 3.5 0 0 1-7 0z"/><path d="M12 13v6M9.5 19.5h5M8.5 8h7"/>',
+    other: '<path d="M5.5 5h9l-.8 14.2a2 2 0 0 1-2 1.8H8.3a2 2 0 0 1-2-1.8z"/><path d="M18.5 3.5v5M16 6h5M5.9 10h8.3"/>',
+    nav_serata: '<path d="M7.6 3h8.8c.7 4.2-.2 9-4.4 9S6.9 7.2 7.6 3z"/><path d="M12 12v8.5M8.5 20.5h7"/>',
+    nav_calendario: '<rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M8.5 3v4M15.5 3v4"/>',
+    nav_profilo: '<circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.6-3.6 3.4-5.6 7-5.6s6.400 2 7 5.600"/>',
+    nav_gestione: '<path d="M5 7h9M18 7h1M5 12h2M11 12h8M5 17h9M18 17h1"/><circle cx="16" cy="7" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="16" cy="17" r="2"/>'
+  };
+  var ICON_LABEL = { beer: 'Boccale', pint: 'Bicchiere alto', bottle: 'Bottiglia', wine: 'Calice', flute: 'Flûte', spritz: 'Spritz', highball: 'Tumbler alto', rocks: 'Tumbler basso', shot: 'Shot', liqueur: 'Bicchierino', other: 'Altro' };
+  var TINT = { beer: '#c98a00', pint: '#c98a00', bottle: '#a8660a', wine: '#a8243e', flute: '#b3922a', spritz: '#e8590c', highball: '#1f9d7a', rocks: '#c4352b', shot: '#6b7684', liqueur: '#8a5a2b', other: '#6e6e73' };
+  function icon(name, tint) {
+    return '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"' +
+      (tint ? ' style="color:' + (TINT[name] || TINT.other) + '"' : '') + '>' + (ICONS[name] || ICONS.other) + '</svg>';
+  }
+  var STATUS_ICON = {
+    crit: '<svg viewBox="0 0 16 16"><path fill="currentColor" d="M5 1h6l4 4v6l-4 4H5l-4-4V5z"/><path d="M4.500 8h7" stroke="#fff" stroke-width="2"/></svg>',
+    warn: '<svg viewBox="0 0 16 16"><path fill="currentColor" d="M8 1.2 15.5 14.5H.5z"/><path d="M8 6v4M8 11.6v1.2" stroke="#fff" stroke-width="1.6"/></svg>',
+    good: '<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7.2" fill="currentColor"/><path d="m4.600 8.200 2.300 2.300 4.500-4.800" fill="none" stroke="#fff" stroke-width="1.8"/></svg>',
+    none: '<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>'
+  };
+
+  /* ---------- testi predefiniti ---------- */
+  var DEFAULT_PRESETS = [
+    { name: 'Birra', ml: 330, abv: 5, dur: 20, icon: 'beer' },
+    { name: 'Birra media', ml: 400, abv: 5, dur: 25, icon: 'pint' },
+    { name: 'Doppio malto', ml: 330, abv: 8, dur: 25, icon: 'bottle' },
+    { name: 'Vino', ml: 125, abv: 12.5, dur: 15, icon: 'wine' },
+    { name: 'Prosecco', ml: 125, abv: 11, dur: 15, icon: 'flute' },
+    { name: 'Spritz', ml: 180, abv: 9, dur: 20, icon: 'spritz' },
+    { name: 'Gin tonic', ml: 200, abv: 10, dur: 25, icon: 'highball' },
+    { name: 'Negroni', ml: 90, abv: 27, dur: 20, icon: 'rocks' },
+    { name: 'Shot', ml: 40, abv: 40, dur: 1, icon: 'shot' },
+    { name: 'Amaro', ml: 40, abv: 30, dur: 5, icon: 'liqueur' }
+  ];
+  var DEFAULT_TERMS = [
+    '## 1. Che cos\'è AlcoholTrack',
+    'AlcoholTrack stima il tasso alcolemico con formule matematiche, a partire dai dati che inserisci. Non è un etilometro, non è un dispositivo medico e i suoi risultati non hanno valore legale.',
+    '## 2. Non usarla per decidere se guidare',
+    'La stima può essere sbagliata anche di molto: dipende da metabolismo, farmaci, salute, stanchezza e dall\'esattezza dei dati inseriti. Non metterti alla guida basandoti sull\'app. Se hai bevuto, non guidare. I limiti di legge citati (art. 186 e 186-bis del Codice della Strada) sono riportati a scopo informativo.',
+    '## 3. Chi può usarla',
+    'Devi avere almeno 18 anni. L\'app non incoraggia il consumo di alcol.',
+    '## 4. I tuoi dati',
+    'Salviamo: nome ed email dell\'account con cui accedi, sesso, età, peso, altezza, tipo di patente, bevande e orari delle serate, misure dell\'etilometro. Servono solo a fare i calcoli e a mostrarti il calendario. Sono conservati su questo dispositivo e, se accedi con Google, in uno spazio privato associato al tuo account sui server di Google Firebase. Sono visibili solo a te: non vengono venduti né condivisi. Puoi cancellarli in ogni momento da Profilo, con «Elimina i miei dati».',
+    '## 5. Responsabilità',
+    'L\'app è fornita così com\'è, senza garanzie di esattezza. Nei limiti consentiti dalla legge, chi la sviluppa non risponde dei danni che derivano dall\'uso delle stime.',
+    '## 6. Emergenze',
+    'Se qualcuno sta male dopo aver bevuto, chiama il 112.',
+    '## 7. Modifiche',
+    'Se questi termini cambiano, ti verrà chiesto di accettarli di nuovo prima di continuare.'
+  ].join('\n');
+  var DEFAULT_DISC = 'AlcoholTrack fornisce una stima matematica, non una misura. Non è un etilometro omologato né un dispositivo medico, e i risultati non hanno valore legale. Farmaci, stanchezza, stato di salute e differenze individuali possono cambiare molto il tasso reale. Non usare l\'app per decidere se guidare: se hai bevuto, non metterti al volante. In caso di malore chiama il 112.';
+
+  /* ---------- utilità ---------- */
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function num(x, d) { return (Math.round(x * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d).replace('.', ','); }
+  function pf(v) { var x = parseFloat(String(v).replace(',', '.')); return isFinite(x) ? x : NaN; }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function hm(t) { var d = new Date(t); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+  function clamp(x, a, b) { return Math.min(b, Math.max(a, x)); }
+  function nid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function mean(a) { return a.reduce(function (s, x) { return s + x; }, 0) / a.length; }
+  function dateKey(t) { var d = new Date(t); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function dayDiff(t, ref) {
+    var a = new Date(t), b = new Date(ref);
+    return Math.round((new Date(a.getFullYear(), a.getMonth(), a.getDate()) - new Date(b.getFullYear(), b.getMonth(), b.getDate())) / 86400000);
+  }
+  function dayTag(t, ref) {
+    var d = dayDiff(t, ref);
+    if (d === 0) return '';
+    if (d === -1) return 'ieri';
+    if (d === 1) return 'domani';
+    return new Date(t).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' });
+  }
+  function when(t, ref) { var g = dayTag(t, ref); return hm(t) + (g ? ' di ' + g : ''); }
+  function longDate(t) { return new Date(t).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' }); }
+  function span(ms) { var m = Math.max(0, Math.round(ms / MIN)), h = Math.floor(m / 60); return h ? h + ' h ' + pad(m % 60) + ' min' : m + ' min'; }
+  // Un orario HH:MM viene collocato sul giorno più vicino al riferimento
+  function resolveTime(hhmm, ref) {
+    var p = String(hhmm).split(':'); if (p.length < 2 || isNaN(+p[0]) || isNaN(+p[1])) return null;
+    var best = null, d = new Date(ref);
+    for (var k = -1; k <= 1; k++) {
+      var c = new Date(d.getFullYear(), d.getMonth(), d.getDate() + k, +p[0], +p[1]).getTime();
+      if (best === null || Math.abs(c - ref) < Math.abs(best - ref)) best = c;
+    }
+    return best;
+  }
+  function rd(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
+  function wr(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+  function rm(k) { try { localStorage.removeItem(k); } catch (e) { /* ignora */ } }
+  function loadScript(src) {
+    return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = function () { rej(new Error('script')); }; document.head.appendChild(s); });
+  }
+
+  /* ---------- stato ---------- */
+  var account = null;   // { mode: 'local' | 'google', uid, name, email }
+  var APP = null;       // configurazione dell'app (catalogo, termini, disclaimer)
+  var D = null;         // dati dell'utente
+  var S = null;         // serata corrente
+  var R = null;         // ultimo risultato del calcolo
+  var Cloud = { on: false, auth: null, db: null, state: 'local' };
+  var editingOld = false, tab = 'serata', pushTimer = null;
+  var calMonth = null, calSel = null;
+
+  function defaultApp() {
+    return { presets: DEFAULT_PRESETS.map(function (p) { return Object.assign({ id: nid() }, p); }), termsVersion: '1.0', termsText: DEFAULT_TERMS, disclaimer: DEFAULT_DISC };
+  }
+  function normApp(a) {
+    var d = defaultApp(); if (!a || typeof a !== 'object') return d;
+    if (Array.isArray(a.presets) && a.presets.length) d.presets = a.presets.map(function (p) {
+      return { id: p.id || nid(), name: String(p.name || 'Bevanda').slice(0, 40), ml: +p.ml || 100, abv: +p.abv || 5, dur: +p.dur || 10, icon: ICON_LABEL[p.icon] ? p.icon : 'other' };
+    });
+    if (a.termsVersion) d.termsVersion = String(a.termsVersion);
+    if (a.termsText) d.termsText = String(a.termsText);
+    if (a.disclaimer) d.disclaimer = String(a.disclaimer);
+    return d;
+  }
+  function freshData() {
+    return { v: 2, profile: { sex: 'M', age: 25, weight: 75, height: 178 }, profileDone: false, category: 'std', stomach: 'empty', beta: 0.15,
+      betaSamples: [], calib: { samples: [] }, terms: null, sessions: [], currentId: null, updatedAt: 0 };
+  }
+  function normData(d) {
+    var f = freshData(); if (!d || typeof d !== 'object') return f;
+    f.profile = Object.assign(f.profile, d.profile || {});
+    f.profileDone = !!d.profileDone; f.category = d.category || 'std';
+    f.stomach = BAC.STOMACH[d.stomach] ? d.stomach : 'empty';
+    f.beta = clamp(+d.beta || 0.15, 0.10, 0.25);
+    f.betaSamples = Array.isArray(d.betaSamples) ? d.betaSamples : [];
+    f.calib = { samples: d.calib && Array.isArray(d.calib.samples) ? d.calib.samples : [] };
+    f.terms = d.terms || null; f.currentId = d.currentId || null; f.updatedAt = +d.updatedAt || 0;
+    f.sessions = (Array.isArray(d.sessions) ? d.sessions : []).map(function (s) {
+      return { id: s.id || nid(), stomach: BAC.STOMACH[s.stomach] ? s.stomach : 'empty', drinks: Array.isArray(s.drinks) ? s.drinks : [], meas: Array.isArray(s.meas) ? s.meas : [], sum: s.sum || null };
+    });
+    return f;
+  }
+  function isAdmin() { return !!(account && account.admin); }
+  // Lo sviluppatore è chi le regole Firestore lasciano leggere il registro utenti: nessuna email nel codice pubblico
+  function probeAdmin() {
+    if (account.mode === 'local') return Promise.resolve(true);
+    if (!Cloud.on) return Promise.resolve(false);
+    return Cloud.db.collection('directory').limit(1).get().then(function () { return true; }).catch(function () { return false; });
+  }
+  function limit() { return (D.profile.age < 21 || D.category !== 'std') ? 0 : 0.5; }
+  function validProfile() {
+    var p = D.profile;
+    return { sex: p.sex === 'F' ? 'F' : 'M', age: clamp(+p.age || 25, 18, 99), weight: clamp(+p.weight || 75, 40, 200), height: clamp(+p.height || 175, 140, 215) };
+  }
+
+  /* ---------- archivio: dispositivo e, se configurato, Firebase ---------- */
+  function initCloud() {
+    var c = CFG.firebase;
+    if (!c || !c.apiKey) return Promise.resolve(false);
+    if (location.protocol === 'file:') { Cloud.state = 'file'; return Promise.resolve(false); }   // l'accesso Google richiede un indirizzo https
+    Cloud.state = 'loading';
+    return loadScript(FB_BASE + 'firebase-app-compat.js')
+      .then(function () { return loadScript(FB_BASE + 'firebase-auth-compat.js'); })
+      .then(function () { return loadScript(FB_BASE + 'firebase-firestore-compat.js'); })
+      .then(function () {
+        window.firebase.initializeApp(c);
+        Cloud.auth = window.firebase.auth(); Cloud.db = window.firebase.firestore(); Cloud.on = true; Cloud.state = 'ok';
+        return true;
+      }).catch(function () { Cloud.state = 'error'; return false; });
+  }
+  function userDoc() { return Cloud.db.collection('users').doc(account.uid); }
+  function loadApp() {
+    var local = normApp(rd('at.app'));
+    if (!Cloud.on) return Promise.resolve(local);
+    return Cloud.db.collection('app').doc('config').get().then(function (snap) {
+      if (snap.exists && snap.data().data) { var a = normApp(JSON.parse(snap.data().data)); wr('at.app', a); return a; }
+      return local;
+    }).catch(function () { return local; });
+  }
+  function saveApp() {
+    wr('at.app', APP);
+    if (Cloud.on && account && account.mode === 'google' && isAdmin()) {
+      return Cloud.db.collection('app').doc('config').set({ data: JSON.stringify(APP), updatedAt: Date.now() });
+    }
+    return Promise.resolve();
+  }
+  function loadData(uid) {
+    var local = rd('at.data.' + uid);
+    if (!local && uid === 'local') {   // importa il profilo dalla prima versione dell'app
+      var old = rd('alcoholtrack.bac.v1');
+      if (old && old.profile && !old.example) local = { profile: old.profile, category: old.category, stomach: old.stomach, beta: old.beta, profileDone: true };
+    }
+    if (!Cloud.on || account.mode !== 'google') return Promise.resolve(normData(local));
+    return userDoc().get().then(function (snap) {
+      var remote = snap.exists && snap.data().data ? JSON.parse(snap.data().data) : null;
+      if (remote && (!local || (+remote.updatedAt || 0) >= (+local.updatedAt || 0))) return normData(remote);
+      return normData(local);
+    }).catch(function () { setSync('offline'); return normData(local); });
+  }
+  function setSync(s) {
+    Cloud.sync = s;
+    var el = $('syncState'); if (!el) return;
+    el.textContent = !account || account.mode !== 'google' ? '' :
+      s === 'saving' ? 'Salvataggio in corso…' : s === 'offline' ? 'Non sincronizzato: i dati sono al sicuro sul dispositivo e partiranno alla prossima connessione.' : 'Sincronizzato con il tuo account.';
+  }
+  function saveData() {
+    if (!account || !D) return;
+    D.updatedAt = Date.now();
+    wr('at.data.' + account.uid, D);
+    if (Cloud.on && account.mode === 'google') {
+      setSync('saving'); clearTimeout(pushTimer);
+      pushTimer = setTimeout(function () {
+        userDoc().set({ data: JSON.stringify(D), updatedAt: D.updatedAt }).then(function () { setSync('ok'); }).catch(function () { setSync('offline'); });
+      }, 1200);
+    }
+  }
+
+  /* ---------- schermate ---------- */
+  function show(id) { ['scrAccess', 'scrTerms', 'scrApp'].forEach(function (x) { $(x).hidden = x !== id; }); window.scrollTo(0, 0); }
+  function showAccess(msg) {
+    var hasCfg = !!(CFG.firebase && CFG.firebase.apiKey), note = $('accessNote');
+    $('btnGoogle').disabled = !Cloud.on;
+    $('btnLocal').hidden = Cloud.on;
+    var text = msg || (Cloud.on ? '' : !hasCfg
+      ? 'Versione di prova: l\'accesso con Google non è ancora collegato a un progetto. Puoi usare l\'app su questo dispositivo, i dati restano qui.'
+      : Cloud.state === 'file' ? 'Hai aperto il file dal computer: l\'accesso con Google funziona solo dall\'indirizzo pubblico dell\'app. Qui puoi provarla, i dati restano su questo dispositivo.'
+      : 'L\'accesso con Google non è disponibile da qui (anteprima o connessione assente). Puoi provare l\'app su questo dispositivo, i dati restano qui.');
+    note.hidden = !text; note.textContent = text; note.className = 'msg' + (msg ? ' warn' : '');
+    $('discText').textContent = (APP || defaultApp()).disclaimer;
+    show('scrAccess');
+  }
+  function enter(acc) {
+    account = acc;
+    loadApp().then(function (a) { APP = a; return probeAdmin(); }).then(function (adm) { account.admin = adm; return loadData(acc.uid); }).then(function (d) {
+      D = d; $('discText').textContent = APP.disclaimer;
+      if (!D.terms || D.terms.version !== APP.termsVersion) showTerms(false); else startApp();
+    });
+  }
+  function signOut() {
+    clearTimeout(pushTimer);
+    if (account && account.mode === 'google' && Cloud.on) { Cloud.auth.signOut(); return; }   // l'ascoltatore riporta all'accesso
+    rm('at.account'); account = null; D = null; showAccess();
+  }
+  function renderTermsText() {
+    $('termsBox').innerHTML = APP.termsText.split(/\n+/).map(function (l) {
+      l = l.trim(); if (!l) return '';
+      return l.indexOf('## ') === 0 ? '<h3>' + esc(l.slice(3)) + '</h3>' : '<p>' + esc(l) + '</p>';
+    }).join('');
+  }
+  function showTerms(viewOnly) {
+    renderTermsText();
+    $('termsMeta').textContent = 'Versione ' + APP.termsVersion + (viewOnly && D.terms ? ' · accettati il ' + new Date(D.terms.at).toLocaleDateString('it-IT') : ' · leggi e accetta per continuare');
+    $('termsChecks').hidden = viewOnly; $('btnAccept').hidden = viewOnly; $('btnDecline').hidden = viewOnly; $('btnTermsClose').hidden = !viewOnly;
+    ['tAge', 'tTerms', 'tData'].forEach(function (id) { $(id).checked = false; });
+    $('btnAccept').disabled = true;
+    show('scrTerms');
+  }
+  function startApp() {
+    show('scrApp');
+    ensureCurrent();
+    $('avatar').textContent = (account.name || account.email || 'O').trim().charAt(0).toUpperCase();
+    renderTabs(); renderPresets(); renderDrinks(); fillProfile(); fillSession();
+    if (!D.profileDone && tab !== 'profilo') { location.hash = 'profilo'; }
+    route();
+  }
+
+  /* ---------- serate ---------- */
+  function newSessionObj() { return { id: nid(), stomach: D.stomach, drinks: [], meas: [], sum: null }; }
+  function ensureCurrent() {
+    S = null;
+    for (var i = 0; i < D.sessions.length; i++) if (D.sessions[i].id === D.currentId) S = D.sessions[i];
+    if (!S) { S = newSessionObj(); D.sessions.push(S); D.currentId = S.id; }
+  }
+  function pruneEmpty() { D.sessions = D.sessions.filter(function (s) { return s.drinks.length || s.id === D.currentId; }); }
+  function startNewSession() {
+    if (!S.drinks.length) { editingOld = false; return; }
+    S = newSessionObj(); D.sessions.push(S); D.currentId = S.id; editingOld = false; pruneEmpty();
+    $('measErr').hidden = true;
+  }
+  function sessionRef() {   // riferimento temporale per gli orari digitati
+    if (S.drinks.length && editingOld) return Math.max.apply(null, S.drinks.map(function (d) { return d.t; }));
+    return Date.now();
+  }
+  function personalK() {
+    var a = D.calib.samples.slice(-5).map(function (x) { return x.k; });
+    return a.length ? mean(a) : 1;
+  }
+  function kFor(sess) {
+    var ok = sess.meas.filter(function (m) { return m.ok; }).sort(function (a, b) { return a.t - b.t; });
+    return ok.length ? ok[ok.length - 1].k : personalK();
+  }
+  function inputFor(sess, k) {
+    return { profile: validProfile(), stomach: sess.stomach, beta: D.beta, limit: limit(), k: k || kFor(sess),
+      drinks: sess.drinks.map(function (d) { return { t: d.t, ml: +d.ml || 0, abv: +d.abv || 0, dur: +d.dur || 1 }; }) };
+  }
+  /* Taratura: ogni misura della serata dà un campione del fattore k; i campioni validi alimentano il fattore
+     personale (media delle ultime 5 misure) usato in tutte le serate successive. Due misure distanti nella
+     fase di discesa danno anche la velocità di smaltimento personale. */
+  function recalcMeas() {
+    var inp = inputFor(S, 1);
+    S.meas.forEach(function (m) {
+      var c = BAC.calibrate(inp, { t: m.t, value: m.value });
+      m.why = c.invalid ? 'before' : c.early ? 'early' : c.clamped ? 'far' : null;
+      m.ok = !m.why; m.k = c.invalid ? null : c.k; m.raw = c.invalid ? null : c.raw; m.after = c.invalid ? null : c.afterEnd;
+    });
+    D.calib.samples = D.calib.samples.filter(function (x) { return x.sid !== S.id; });
+    S.meas.forEach(function (m) { if (m.ok) D.calib.samples.push({ sid: S.id, mid: m.id, t: m.t, k: m.k }); });
+    D.calib.samples.sort(function (a, b) { return a.t - b.t; });
+
+    var v = S.meas.filter(function (m) { return m.ok && m.after >= 45 && m.value >= 0.1; }).sort(function (a, b) { return a.t - b.t; });
+    var sample = null;
+    if (v.length >= 2) {
+      var a = v[0], b = v[v.length - 1], dh = (b.t - a.t) / HOUR;
+      if (dh >= 0.75) { var obs = (a.value - b.value) / dh; if (obs >= 0.08 && obs <= 0.30) sample = Math.round(clamp(obs, 0.10, 0.25) * 1000) / 1000; }
+    }
+    var old = null; D.betaSamples.forEach(function (x) { if (x.sid === S.id) old = x.beta; });
+    if (old !== sample) {
+      D.betaSamples = D.betaSamples.filter(function (x) { return x.sid !== S.id; });
+      if (sample !== null) D.betaSamples.push({ sid: S.id, beta: sample });
+      D.beta = D.betaSamples.length ? Math.round(mean(D.betaSamples.slice(-5).map(function (x) { return x.beta; })) * 100) / 100 : 0.15;
+      $('beta').value = D.beta;
+    }
+  }
+
+  /* ---------- bevande ---------- */
+  function renderPresets() {
+    $('presets').innerHTML = APP.presets.map(function (p, i) {
+      return '<button class="tile" type="button" data-p="' + i + '">' + icon(p.icon, true) + '<b>' + esc(p.name) + '</b><span class="num">' + num(p.ml, 0) + ' ml · ' + num(p.abv, p.abv % 1 ? 1 : 0) + ' %</span></button>';
+    }).join('') + '<button class="tile tile-custom" type="button" data-p="-1">' + icon('other', true) + '<b>Altro</b><span>scegli tu</span></button>';
+  }
+  function renderDrinks() {
+    var list = S.drinks.slice().sort(function (a, b) { return a.t - b.t; });
+    $('drinks').innerHTML = list.map(function (d) {
+      var id = 'd' + d.id;
+      return '<li class="drink" data-id="' + d.id + '">' +
+        '<div class="drink-top">' +
+          '<span class="drink-ico">' + icon(d.icon, true) + '</span>' +
+          '<input class="drink-name" id="' + id + 'n" data-f="name" value="' + esc(d.name) + '" aria-label="Nome della bevanda" maxlength="40">' +
+          '<span class="drink-g num" data-g></span>' +
+          '<button class="x" type="button" data-del aria-label="Rimuovi ' + esc(d.name) + '">×</button>' +
+        '</div>' +
+        '<div class="drink-fields">' +
+          '<label class="fld"><span data-day>Ora</span><input class="num" type="time" id="' + id + 't" data-f="t" value="' + hm(d.t) + '"></label>' +
+          '<label class="fld"><span>ml</span><input class="num" type="number" id="' + id + 'm" data-f="ml" min="1" max="2000" step="1" inputmode="numeric" value="' + d.ml + '"></label>' +
+          '<label class="fld"><span>Gradi %</span><input class="num" type="number" id="' + id + 'a" data-f="abv" min="0.5" max="96" step="0.5" inputmode="decimal" value="' + d.abv + '"></label>' +
+          '<label class="fld"><span>Minuti</span><input class="num" type="number" id="' + id + 'd" data-f="dur" min="1" max="240" step="1" inputmode="numeric" value="' + d.dur + '"></label>' +
+        '</div></li>';
+    }).join('');
+    $('drinksEmpty').hidden = list.length > 0;
+  }
+  function findDrink(id) { for (var i = 0; i < S.drinks.length; i++) if (S.drinks[i].id === id) return S.drinks[i]; return null; }
+  function refreshDrinkMeta(now) {
+    var total = 0;
+    Array.prototype.forEach.call($('drinks').children, function (li) {
+      var d = findDrink(li.dataset.id); if (!d) return;
+      var g = BAC.grams(+d.ml || 0, +d.abv || 0); total += g;
+      li.querySelector('[data-g]').textContent = num(g, 1) + ' g di alcol';
+      var tag = dayTag(d.t, now);
+      li.querySelector('[data-day]').textContent = 'Ora' + (tag ? ' (' + tag + ')' : '');
+    });
+    $('totals').innerHTML = S.drinks.length
+      ? '<span>Alcol puro totale <b class="num">' + num(total, 1) + ' g</b></span><span><b class="num">' + num(total / 12, 1) + '</b> unità alcoliche da 12 g</span>' : '';
+  }
+  function fillSession() {
+    $('stEmpty').checked = S.stomach === 'empty'; $('stSnack').checked = S.stomach === 'snack'; $('stMeal').checked = S.stomach === 'meal';
+    $('measVal').value = ''; $('measTime').value = hm(editingOld ? sessionRef() : Date.now());
+  }
+
+  /* ---------- verdetto ---------- */
+  function fact(k, v, s) { return '<div class="fact"><div class="fact-k">' + k + '</div><div class="fact-v num">' + v + '</div><div class="fact-s">' + s + '</div></div>'; }
+  function eta(t, now) { return t > now ? 'tra ' + span(t - now) : 'già passato'; }
+  function tagIn(t, now) { var g = dayTag(t, now); return g ? ' (' + g + ')' : ''; }
+  function renderScale(c) {
+    var MAX = 2, pos = function (x) { return clamp(x / MAX, 0, 1) * 100; }, html = '';
+    if (c) html += '<div class="scale-range" style="left:' + pos(c.lo) + '%;width:' + Math.max(0, pos(c.hi) - pos(c.lo)) + '%"></div>';
+    [0.5, 0.8, 1.5].forEach(function (x) { html += '<div class="scale-tick" style="left:' + pos(x) + '%"></div>'; });
+    if (c) html += '<div class="scale-mark" style="left:' + pos(c.ex) + '%"></div>';
+    $('scaleTrack').innerHTML = html;
+    $('scaleLabels').innerHTML = [[0, '0'], [0.5, '0,5'], [0.8, '0,8'], [1.5, '1,5'], [2, '2,0 e oltre']].map(function (a) {
+      return '<span class="num" style="left:' + pos(a[0]) + '%">' + a[1] + '</span>';
+    }).join('');
+  }
+  function renderVerdict(r, now, lim) {
+    var s = 'none', label = 'Nessuna bevanda', head, sub;
+    $('dangerNote').hidden = true;
+    if (r.empty) {
+      head = 'Aggiungi quello che hai bevuto';
+      sub = 'Il calcolo parte appena tocchi la prima bevanda.';
+      $('nowBig').textContent = '0,00'; $('nowRange').textContent = '0,00 – 0,00'; $('trend').textContent = '';
+      renderScale(null);
+      $('facts').innerHTML = fact('Picco', '–', 'nessun dato') + fact(lim > 0 ? 'Sotto 0,5 g/L' : 'Limite di legge', lim > 0 ? '–' : '0,0 <small>g/L</small>', lim > 0 ? 'limite di legge' : 'per te vale l\'orario «A zero»') + fact('A zero', '–', 'nessun dato') + fact('Alcol puro', '0 <small>g</small>', '0 unità alcoliche');
+    } else {
+      var c = r.at(now), nxt = r.at(now + 5 * MIN);
+      var exAbove = lim > 0 && r.peak.value >= lim, hiAbove = lim > 0 && r.peakHi.value >= lim;
+      var zeroEx = when(r.zeroEx, now), zeroHi = when(r.zeroHi, now), legalEx = when(r.legalEx, now), legalHi = when(r.legalHi, now);
+      // In evidenza c'è sempre la stima centrale; lo scenario prudenziale è il margine indicato accanto
+      if (now < r.t0) {
+        label = 'Previsione'; head = 'Le bevande inserite sono nel futuro';
+        sub = 'Il calcolo mostra cosa succederà. ' + (lim > 0 && !exAbove
+          ? 'La stima resta sotto 0,5 g/L e torna a zero alle ' + zeroEx + '.'
+          : 'Secondo la stima, niente guida tra la prima bevanda e le ' + (lim > 0 ? legalEx : zeroEx) + '.');
+      } else if (lim > 0 && exAbove && now < r.legalEx) {
+        s = 'crit'; label = 'Non guidare'; head = 'Non guidare prima delle ' + legalEx;
+        sub = 'È l\'ora in cui la stima scende sotto 0,5 g/L. Con margine prudenziale: ' + legalHi + '. A zero alle ' + zeroEx + '.';
+      } else if (lim > 0 && hiAbove && now < r.legalHi) {
+        s = 'warn'; label = 'Vicino al limite'; head = 'Stima sotto 0,5 g/L, ma senza margine';
+        sub = 'Potresti essere ancora sopra il limite: con margine prudenziale sei sotto dalle ' + legalHi + '. A zero alle ' + zeroEx + '.';
+      } else if (lim === 0 && now < r.zeroEx) {
+        s = 'crit'; label = 'Non guidare'; head = 'Non guidare prima delle ' + zeroEx;
+        sub = 'Il tuo limite è 0,0 g/L: è l\'ora in cui la stima arriva a zero. Con margine prudenziale: ' + zeroHi + '.';
+      } else if (now < r.zeroEx) {
+        s = 'warn'; label = 'Sotto il limite, non a zero'; head = 'Sotto 0,5 g/L, ma non ancora a zero';
+        sub = 'Riflessi e attenzione calano già sotto il limite di legge. A zero alle ' + zeroEx + '.';
+      } else if (now < r.zeroHi) {
+        s = 'warn'; label = 'A zero secondo la stima'; head = 'A zero dalle ' + zeroEx + ', senza margine';
+        sub = lim === 0 ? 'Il tuo limite è 0,0 g/L: per sicurezza aspetta le ' + zeroHi + ', quando anche lo scenario prudenziale è a zero.'
+          : 'Con margine prudenziale sei a zero dalle ' + zeroHi + '.';
+      } else {
+        s = 'good'; label = 'A zero'; head = 'A zero dalle ' + zeroEx;
+        sub = 'Anche lo scenario prudenziale è tornato a zero. Se sei stanco o poco lucido, non guidare lo stesso.';
+      }
+      $('nowBig').textContent = num(c.ex, 2);
+      $('nowRange').textContent = num(c.lo, 2) + ' – ' + num(c.hi, 2);
+      var dlt = nxt.ex - c.ex;
+      $('trend').textContent = now < r.t0 ? '' : dlt > 0.003 ? 'In salita: stai ancora assorbendo' : dlt < -0.003 ? 'In discesa' : (c.ex > 0.005 ? 'Vicino al picco' : '');
+      renderScale(c);
+      var pk = r.peak;
+      var f1 = fact('Picco', num(pk.value, 2) + ' <small>g/L</small>', (pk.t > now ? 'previsto alle ' : 'alle ') + when(pk.t, now) + '; fino a ' + num(r.peakHi.value, 2) + ' con margine prudenziale');
+      var f2;
+      if (lim === 0) f2 = fact('Limite di legge', '0,0 <small>g/L</small>', 'per te vale l\'orario «A zero»');
+      else if (!hiAbove) f2 = fact('Sotto 0,5 g/L', 'sempre', 'mai sopra il limite, neanche con margine prudenziale');
+      else if (!exAbove) f2 = fact('Sotto 0,5 g/L', 'sempre', 'secondo la stima; con margine prudenziale dalle ' + hm(r.legalHi));
+      else f2 = fact('Sotto 0,5 g/L', hm(r.legalEx), eta(r.legalEx, now) + tagIn(r.legalEx, now) + '; con margine prudenziale ' + hm(r.legalHi));
+      var f3 = fact('A zero', hm(r.zeroEx), eta(r.zeroEx, now) + tagIn(r.zeroEx, now) + '; con margine prudenziale ' + hm(r.zeroHi));
+      var f4 = fact('Alcol puro', num(r.total, 0) + ' <small>g</small>', num(r.total / 12, 1) + ' unità alcoliche');
+      $('facts').innerHTML = f1 + f2 + f3 + f4;
+      if (r.peakHi.value >= 2.5) {
+        $('dangerNote').hidden = false;
+        $('dangerNote').innerHTML = '<b>Quantità pericolosa.</b> Con questi dati il tasso può superare 2,5 g/L: c\'è rischio di intossicazione acuta. Non restare da solo. Se qualcuno non risponde, vomita da sdraiato o respira male, chiama il 112.';
+      }
+    }
+    $('pill').dataset.s = s; $('pill').innerHTML = STATUS_ICON[s] + '<span>' + label + '</span>';
+    $('headline').textContent = head; $('headlineSub').textContent = sub;
+    $('legLimit').style.display = lim > 0 ? '' : 'none';
+    $('legMeas').style.display = S.meas.length ? '' : 'none';
+    var first = S.drinks.length ? Math.min.apply(null, S.drinks.map(function (d) { return d.t; })) : null;
+    $('sessTitle').textContent = first === null ? 'Nuova serata' : dayDiff(first, now) === 0 ? 'Serata di oggi' : 'Serata di ' + longDate(first);
+    $('sessSub').textContent = first === null ? 'Si salva da sola nel calendario' : S.drinks.length + (S.drinks.length === 1 ? ' bevanda' : ' bevande') + ' dalle ' + hm(first) + ' · salvata nel calendario';
+    $('btnNew').hidden = !S.drinks.length;
+  }
+
+  /* ---------- grafico ---------- */
+  var G = null;
+  function renderChart(r, now, lim) {
+    $('tip').style.opacity = 0;
+    var box = $('chart'), W = Math.max(300, $('chartBox').clientWidth || 640), H = W < 520 ? 240 : 300;
+    var m = { l: 38, r: 14, t: 22, b: 28 }, pw = W - m.l - m.r, ph = H - m.t - m.b;
+    if (r.empty) {
+      box.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Nessun dato"><text x="' + W / 2 + '" y="' + H / 2 + '" text-anchor="middle">La curva appare quando aggiungi una bevanda</text></svg>';
+      G = null; return;
+    }
+    var tA = r.t0 - 10 * MIN, tB = r.t0 + r.n * MIN;
+    var maxMeas = S.meas.reduce(function (a, x) { return Math.max(a, x.value); }, 0);
+    var top = Math.max(r.peakHi.value, lim > 0 ? lim : 0, maxMeas, 0.1) * 1.18;
+    var yStep = top <= 0.6 ? 0.1 : top <= 1.5 ? 0.25 : top <= 3 ? 0.5 : 1;
+    var yMax = Math.ceil(top / yStep) * yStep;
+    var X = function (t) { return m.l + (t - tA) / (tB - tA) * pw; };
+    var Y = function (c) { return m.t + (1 - c / yMax) * ph; };
+    var s = '', i;
+    for (var y = 0; y <= yMax + 1e-9; y += yStep) {
+      s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(y).toFixed(1) + '" y2="' + Y(y).toFixed(1) + '" stroke="var(--line)" stroke-width="1"' + (y === 0 ? '' : ' stroke-dasharray="2 4"') + '/>';
+      s += '<text class="num" x="' + (m.l - 7) + '" y="' + (Y(y) + 4).toFixed(1) + '" text-anchor="end">' + num(y, yStep === 0.25 ? 2 : 1) + '</text>';
+    }
+    var hours = (tB - tA) / HOUR, steps = [1, 2, 3, 4, 6, 12], st = 12, maxTicks = Math.max(3, Math.floor(pw / 62));
+    for (i = 0; i < steps.length; i++) if (hours / steps[i] <= maxTicks) { st = steps[i]; break; }
+    var d0 = new Date(tA); d0.setMinutes(0, 0, 0);
+    for (var t = d0.getTime(); t <= tB; t += HOUR) {
+      if (t < tA || new Date(t).getHours() % st !== 0) continue;
+      s += '<line x1="' + X(t).toFixed(1) + '" x2="' + X(t).toFixed(1) + '" y1="' + (m.t + ph) + '" y2="' + (m.t + ph + 4) + '" stroke="var(--ink-3)"/>';
+      s += '<text class="num" x="' + X(t).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="middle">' + hm(t) + '</text>';
+    }
+    var stp = Math.max(1, Math.floor(r.n / 360)), idx = [];
+    for (i = 0; i <= r.n; i += stp) idx.push(i);
+    if (idx[idx.length - 1] !== r.n) idx.push(r.n);
+    var pt = function (C, k) { return X(r.t0 + k * MIN).toFixed(1) + ' ' + Y(C[k]).toFixed(1); };
+    s += '<path d="M' + idx.map(function (k) { return pt(r.hi, k); }).join('L') + 'L' + idx.slice().reverse().map(function (k) { return pt(r.lo, k); }).join('L') + 'Z" fill="var(--band)"/>';
+    if (lim > 0) {
+      s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(lim).toFixed(1) + '" y2="' + Y(lim).toFixed(1) + '" stroke="var(--crit)" stroke-width="1.5" stroke-dasharray="6 4"/>';
+      s += '<text x="' + (W - m.r - 2) + '" y="' + (Y(lim) - 6).toFixed(1) + '" text-anchor="end" style="fill:var(--crit);font-weight:600;paint-order:stroke;stroke:var(--halo);stroke-width:3px">limite 0,5 g/L</text>';
+    }
+    s += '<path d="M' + idx.map(function (k) { return pt(r.hi, k); }).join('L') + '" fill="none" stroke="var(--ink-2)" stroke-width="1.5" stroke-dasharray="4 4" stroke-linejoin="round"/>';
+    s += '<path d="M' + idx.map(function (k) { return pt(r.ex, k); }).join('L') + '" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
+    S.drinks.forEach(function (d) {
+      if (!(d.ml > 0 && d.abv > 0)) return;
+      s += '<rect x="' + (X(d.t) - 1.5).toFixed(1) + '" y="' + (m.t + ph - 9) + '" width="3" height="9" rx="1.5" fill="var(--ink-2)"/>';
+    });
+    var px = X(r.peak.t), py = Y(r.peak.value), anchor = px > W - 90 ? 'end' : 'start';
+    s += '<circle cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="4.5" fill="var(--accent)" stroke="var(--halo)" stroke-width="2"/>';
+    s += '<text class="num" x="' + (px + (anchor === 'end' ? -9 : 9)).toFixed(1) + '" y="' + (py + 16).toFixed(1) + '" text-anchor="' + anchor + '" style="fill:var(--ink);font-weight:600;paint-order:stroke;stroke:var(--halo);stroke-width:3px">picco ' + num(r.peak.value, 2) + '</text>';
+    if (now >= tA && now <= tB) {
+      var nx = X(now), c = r.at(now);
+      s += '<line x1="' + nx.toFixed(1) + '" x2="' + nx.toFixed(1) + '" y1="' + (m.t - 4) + '" y2="' + (m.t + ph) + '" stroke="var(--ink)" stroke-width="1"/>';
+      s += '<text x="' + clamp(nx, m.l + 12, W - m.r - 12).toFixed(1) + '" y="' + (m.t - 9) + '" text-anchor="middle" style="fill:var(--ink);font-weight:600">ora</text>';
+      s += '<circle cx="' + nx.toFixed(1) + '" cy="' + Y(c.ex).toFixed(1) + '" r="4" fill="var(--halo)" stroke="var(--ink)" stroke-width="2"/>';
+    }
+    // misure dell'etilometro: rombo pieno se usata per il fattore, vuoto se scartata
+    S.meas.forEach(function (x) {
+      if (x.t < tA || x.t > tB) return;
+      var mx = X(x.t), my = Y(Math.min(x.value, yMax));
+      s += '<rect x="' + (mx - 5).toFixed(1) + '" y="' + (my - 5).toFixed(1) + '" width="10" height="10" rx="1.5" transform="rotate(45 ' + mx.toFixed(1) + ' ' + my.toFixed(1) + ')" fill="' + (x.ok ? 'var(--ink)' : 'var(--halo)') + '" stroke="' + (x.ok ? 'var(--halo)' : 'var(--ink)') + '" stroke-width="2"/>';
+    });
+    s += '<g id="cross" style="display:none"><line id="crossL" y1="' + m.t + '" y2="' + (m.t + ph) + '" stroke="var(--ink-3)" stroke-width="1"/><circle id="crossD" r="5" fill="var(--accent)" stroke="var(--halo)" stroke-width="2"/></g>';
+    s += '<rect id="hit" x="' + m.l + '" y="' + m.t + '" width="' + pw + '" height="' + ph + '" fill="transparent"/>';
+    box.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Curva del tasso alcolemico: picco ' + num(r.peak.value, 2) + ' grammi per litro alle ' + hm(r.peak.t) + ', a zero alle ' + hm(r.zeroEx) + ' secondo la stima">' + s + '</svg>';
+    G = { W: W, m: m, pw: pw, tA: tA, tB: tB, X: X, Y: Y };
+    var hit = $('hit');
+    hit.addEventListener('pointermove', hover); hit.addEventListener('pointerdown', hover);
+    hit.addEventListener('pointerleave', function () { $('cross').style.display = 'none'; $('tip').style.opacity = 0; });
+  }
+  function hover(e) {
+    if (!G || !R || R.empty) return;
+    var svg = $('chart').firstChild, rect = svg.getBoundingClientRect(), k = G.W / rect.width;
+    var x = clamp((e.clientX - rect.left) * k, G.m.l, G.m.l + G.pw);
+    var t = Math.round((G.tA + (x - G.m.l) / G.pw * (G.tB - G.tA)) / MIN) * MIN;
+    var c = R.at(t), cx = G.X(t), cy = G.Y(c.ex);
+    $('cross').style.display = '';
+    $('crossL').setAttribute('x1', cx); $('crossL').setAttribute('x2', cx);
+    $('crossD').setAttribute('cx', cx); $('crossD').setAttribute('cy', cy);
+    var tip = $('tip'), tag = dayTag(t, Date.now());
+    tip.innerHTML = '<b class="num">' + hm(t) + '</b>' + (tag ? ' ' + tag : '') + '<br>Stima <b class="num">' + num(c.ex, 2) + ' g/L</b><br>Intervallo <span class="num">' + num(c.lo, 2) + ' – ' + num(c.hi, 2) + '</span>';
+    tip.style.opacity = 1;
+    var bw = $('chartBox').clientWidth, tw = tip.offsetWidth, left = cx / k + 12;
+    if (left + tw > bw) left = cx / k - tw - 12;
+    tip.style.transform = 'translate(' + Math.max(0, left) + 'px,' + Math.max(0, cy / k - 60) + 'px)';
+  }
+  function renderTable(r, now) {
+    if (r.empty) { $('table').innerHTML = '<tr><td>Nessun dato</td></tr>'; return; }
+    var rows = '<tr><th>Ora</th><th>Stima</th><th>Prudenziale</th><th>Ottimistica</th></tr>';
+    var start = Math.ceil(r.t0 / (30 * MIN)) * 30 * MIN, end = r.t0 + r.n * MIN;
+    for (var t = start; t <= end; t += 30 * MIN) {
+      var c = r.at(t), tag = dayTag(t, now);
+      rows += '<tr><td class="num">' + hm(t) + (tag ? ' <span class="hint">' + tag + '</span>' : '') + '</td><td class="num">' + num(c.ex, 2) + '</td><td class="num">' + num(c.hi, 2) + '</td><td class="num">' + num(c.lo, 2) + '</td></tr>';
+    }
+    $('table').innerHTML = rows;
+  }
+
+  /* ---------- etilometro ---------- */
+  var WHY = {
+    early: 'Non usata: troppo vicina all\'ultimo sorso. Aspetta 20 minuti e ripeti.',
+    far: 'Non usata: troppo lontana dalla stima. Controlla bevande e orari, o ripeti la misura.',
+    before: 'Non usata: precede la prima bevanda.'
+  };
+  function renderMeas(r, now) {
+    var list = S.meas.slice().sort(function (a, b) { return a.t - b.t; });
+    $('measList').innerHTML = list.map(function (m) {
+      return '<li data-mid="' + m.id + '"><div class="grow"><b class="num">' + num(m.value, 2) + ' g/L</b> alle <span class="num">' + when(m.t, now) + '</span>' +
+        (m.ok ? '<small>Usata: le formule davano ' + num(m.value / m.k, 2) + ' g/L, fattore × ' + num(m.k, 2) + '</small>'
+              : '<small class="warn">' + WHY[m.why] + (m.why === 'far' && m.raw ? ' (× ' + num(m.raw, 2) + ')' : '') + '</small>') +
+        '</div><button class="x" type="button" data-mdel aria-label="Rimuovi misura">×</button></li>';
+    }).join('');
+    var k = r.empty ? kFor(S) : r.k, own = S.meas.some(function (m) { return m.ok; }), n = D.calib.samples.length;
+    $('measSum').textContent = own ? 'Questa serata usa il fattore × ' + num(k, 2) + ' ricavato dalla tua misura. Da ora vale anche per le prossime serate.'
+      : n ? 'Questa serata usa il tuo fattore personale × ' + num(k, 2) + ', ricavato da ' + n + (n === 1 ? ' misura.' : ' misure.')
+      : 'Nessuna misura: il calcolo usa solo le formule.';
+  }
+
+  /* ---------- metodo ---------- */
+  function renderMethod(r, lim) {
+    var b = r.body, p = validProfile(), st = r.stomach, k = r.empty ? kFor(S) : r.k, vd = b.vd / k, beta = D.beta, li = [];
+    li.push('<b>Alcol ingerito.</b> Per ogni bevanda: volume × gradazione × 0,789 g/mL (densità dell\'etanolo).' +
+      '<span class="eq">A = V[mL] × (% vol / 100) × 0,789' + (r.empty ? '' : '   →   totale ' + num(r.total, 1) + ' g') + '</span>');
+    li.push('<b>Acqua corporea.</b> L\'alcol si diluisce nell\'acqua del corpo, non nel peso. Con BMI ' + num(b.bmi, 1) + ' si usa l\'equazione di ' + b.method +
+      (b.method === 'Forrest' ? ' (BMI tra 17 e 35)' : ' (BMI fuori da 17–35)') + ': acqua totale <b class="num">' + num(b.tbw, 1) + ' L</b>, cioè un fattore di Widmark r = <b class="num">' + num(b.r, 3) + '</b>.' +
+      '<span class="eq">Vd = TBW / 0,80 = ' + num(b.vd, 1) + ' L' + (Math.abs(k - 1) > 0.005 ? '   →   con il tuo fattore × ' + num(k, 2) + ': ' + num(vd, 1) + ' L (r effettivo ' + num(b.r / k, 3) + ')' : '') + '</span>' +
+      'Per confronto, per ' + (p.sex === 'M' ? 'un uomo' : 'una donna') + ' di ' + num(p.weight, 0) + ' kg e ' + num(p.height, 0) + ' cm: Watson r = <span class="num">' + num(b.rWatson, 3) + '</span>, Forrest r = <span class="num">' + num(b.rForrest, 3) + '</span>, Seidl r = <span class="num">' + num(b.rSeidl, 3) + '</span>.');
+    li.push('<b>Assorbimento.</b> L\'alcol passa dallo stomaco al sangue con cinetica di primo ordine. Stomaco «' + st.label.toLowerCase() + '»: ka = <span class="num">' + num(st.ka, 1) + '</span> all\'ora (metà assorbita in ' + num(Math.LN2 / st.ka * 60, 0) + ' min) e frazione assorbita F = <span class="num">' + num(st.F, 2) + '</span>. Ogni bevanda entra a velocità costante per il tempo in cui la bevi.');
+    li.push('<b>Eliminazione.</b> Il fegato smaltisce a velocità quasi costante β = <span class="num">' + num(beta, 2) + '</span> g/L all\'ora, che rallenta vicino a zero (Michaelis-Menten, Km = 0,03 g/L).' +
+      '<span class="eq">dG/dt = I(t) − ka·G        dC/dt = F·ka·G / Vd − Vmax·C / (Km + C)        Vmax = β·(1 + Km / 0,5)</span>' +
+      'Con questa scelta di Vmax la discesa a 0,5 g/L vale esattamente β. ' +
+      'Le due equazioni sono integrate con Runge-Kutta del 4° ordine a passi di un minuto. Il picco è il massimo della curva, non una formula fissa.');
+    li.push('<b>Taratura.</b> Ogni misura valida dell\'etilometro dà il rapporto tra valore letto e valore previsto dalle formule. La media delle ultime 5 misure è il tuo fattore personale: divide Vd, quindi cambia picco e tempi di tutte le serate. Due misure distanti almeno 45 minuti in fase di discesa aggiornano anche β.');
+    li.push('<b>Margine prudenziale.</b> Scenario prudenziale: Vd −12 %, β = <span class="num">' + num(BAC.betaSlow(beta), 3) + '</span>, F = <span class="num">' + num(st.Fhi, 2) + '</span>. Scenario ottimistico: Vd +12 %, β = <span class="num">' + num(BAC.betaFast(beta), 2) + '</span>, F = <span class="num">' + num(st.Flo, 2) + '</span>. Il prudenziale allunga i tempi di circa un terzo: con la variabilità riportata in letteratura (r ± 9 %, β ± 22 %) copre all\'incirca 9 persone su 10.');
+    li.push('<b>Guida.</b> Il tuo limite è <b class="num">' + (lim > 0 ? '0,5' : '0,0') + ' g/L</b>' + (lim > 0 ? '' : ' (art. 186-bis: under 21, neopatentati nei primi 3 anni, conducenti professionali)') + '. Gli orari in evidenza sono quelli della stima centrale: metà delle persone con i tuoi stessi dati ci arriva dopo. Accanto trovi l\'orario con margine prudenziale. «A zero» significa sotto 0,005 g/L, cioè 0,00 su un etilometro a due decimali.');
+    $('method').innerHTML = li.map(function (x) { return '<li>' + x + '</li>'; }).join('');
+  }
+
+  /* ---------- ciclo ---------- */
+  function refresh() {
+    if (!D || !S || $('scrApp').hidden) return;
+    var now = Date.now(), lim = limit();
+    recalcMeas();
+    R = BAC.run(inputFor(S));
+    S.sum = R.empty ? null : { start: R.t0, total: R.total, peak: R.peak.value, peakHi: R.peakHi.value, zeroEx: R.zeroEx, zeroHi: R.zeroHi, n: S.drinks.length };
+    renderVerdict(R, now, lim);
+    if (tab === 'serata') { renderChart(R, now, lim); renderTable(R, now); renderMethod(R, lim); renderMeas(R, now); refreshDrinkMeta(now); }
+    if (tab === 'profilo') renderProfileTab();
+    $('ageNote').hidden = !(D.profile.age < 21);
+    $('betaVal').textContent = num(D.beta, 2);
+  }
+  function commit() { refresh(); saveData(); }
+
+  /* ---------- calendario ---------- */
+  function sessionsByDay() {
+    var map = {};
+    D.sessions.forEach(function (s) { if (!s.sum || !s.drinks.length) return; var k = dateKey(s.sum.start); (map[k] = map[k] || []).push(s); });
+    return map;
+  }
+  function band(p) { return p >= 0.8 ? 'crit' : p >= 0.5 ? 'warn' : ''; }
+  function renderCalendar() {
+    var now = Date.now();
+    if (!calMonth) { var n = new Date(now); calMonth = new Date(n.getFullYear(), n.getMonth(), 1); }
+    if (!calSel) calSel = dateKey(now);
+    var map = sessionsByDay(), y = calMonth.getFullYear(), mo = calMonth.getMonth();
+    $('calMonth').textContent = calMonth.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+    var html = ['L', 'M', 'M', 'G', 'V', 'S', 'D'].map(function (d) { return '<div class="cal-dow">' + d + '</div>'; }).join('');
+    var lead = (new Date(y, mo, 1).getDay() + 6) % 7, days = new Date(y, mo + 1, 0).getDate(), today = dateKey(now);
+    for (var i = 0; i < lead; i++) html += '<div class="day out"></div>';
+    var count = 0, grams = 0, top = 0;
+    for (var d = 1; d <= days; d++) {
+      var key = y + '-' + pad(mo + 1) + '-' + pad(d), ss = map[key] || [], mark = '';
+      if (ss.length) {
+        var pk = Math.max.apply(null, ss.map(function (s) { return s.sum.peak; }));
+        count += ss.length; top = Math.max(top, pk); ss.forEach(function (s) { grams += s.sum.total; });
+        mark = '<span class="mark num" data-b="' + band(pk) + '">' + num(pk, 1) + '</span>';
+      }
+      html += '<button type="button" class="day' + (key === today ? ' today' : '') + (key === calSel ? ' sel' : '') + '" data-key="' + key + '" aria-label="' + d + (ss.length ? ', ' + ss.length + ' serate' : '') + '"><span class="day-n num">' + d + '</span>' + mark + '</button>';
+    }
+    $('calGrid').innerHTML = html;
+    $('calSummary').textContent = count ? count + (count === 1 ? ' serata' : ' serate') + ' questo mese · ' + num(grams, 0) + ' g di alcol (' + num(grams / 12, 1) + ' unità) · picco più alto ' + num(top, 2) + ' g/L'
+      : 'Nessuna serata salvata questo mese';
+    var p = calSel.split('-'), selDate = new Date(+p[0], +p[1] - 1, +p[2]).getTime(), list = (map[calSel] || []).slice().sort(function (a, b) { return a.sum.start - b.sum.start; });
+    $('calDayTitle').textContent = longDate(selDate).replace(/^./, function (c) { return c.toUpperCase(); });
+    $('calDayEmpty').hidden = list.length > 0;
+    $('calDayList').innerHTML = list.map(function (s) {
+      var u = s.sum, b = band(u.peak);
+      return '<li data-sid="' + s.id + '"><div class="grow"><b>Dalle <span class="num">' + hm(u.start) + '</span></b> <span class="mark num" data-b="' + b + '">picco ' + num(u.peak, 2) + ' g/L</span>' +
+        '<small>' + u.n + (u.n === 1 ? ' bevanda' : ' bevande') + ' · ' + num(u.total, 0) + ' g di alcol · a zero alle ' + when(u.zeroEx || u.zeroHi, u.start) + (s.id === D.currentId ? ' · serata aperta' : '') + '</small></div>' +
+        '<button class="btn" type="button" data-open>Apri</button><button class="x" type="button" data-sdel aria-label="Elimina serata">×</button></li>';
+    }).join('');
+  }
+
+  /* ---------- profilo ---------- */
+  function fillProfile() {
+    var p = D.profile;
+    $('sexM').checked = p.sex !== 'F'; $('sexF').checked = p.sex === 'F';
+    $('age').value = p.age; $('weight').value = p.weight; $('height').value = p.height;
+    $('category').value = D.category; $('beta').value = D.beta;
+  }
+  function renderProfileTab() {
+    $('profileIntro').hidden = D.profileDone; $('btnProfileDone').hidden = D.profileDone;
+    var b = BAC.body(validProfile()), k = personalK(), n = D.calib.samples.length;
+    $('factorKv').innerHTML =
+      '<div><div class="k">Dalle formule</div><div class="v num">r ' + num(b.r, 3) + '</div><div class="s">equazione di ' + b.method + '</div></div>' +
+      '<div><div class="k">Fattore personale</div><div class="v num">× ' + num(k, 2) + '</div><div class="s">' + (n ? 'da ' + n + (n === 1 ? ' misura' : ' misure') : 'nessuna misura') + '</div></div>' +
+      '<div><div class="k">In uso nei calcoli</div><div class="v num">r ' + num(b.r / k, 3) + '</div><div class="s">' + (n ? (k > 1 ? 'tasso più alto delle formule' : 'tasso più basso delle formule') : 'uguale alle formule') + '</div></div>';
+    $('factorNote').textContent = n ? 'Il fattore è la media delle ultime 5 misure valide. Vale per tutte le serate senza una misura propria.'
+      : 'Quando aggiungi una misura dell\'etilometro in una serata, l\'app confronta il valore letto con quello previsto e corregge il fattore da lì in avanti.';
+    $('factorList').innerHTML = D.calib.samples.slice(-5).reverse().map(function (x) {
+      return '<li><div class="grow"><b class="num">× ' + num(x.k, 2) + '</b><small>misura del ' + new Date(x.t).toLocaleDateString('it-IT', { day: 'numeric', month: 'long' }) + ' alle ' + hm(x.t) + '</small></div></li>';
+    }).join('');
+    $('betaNote').textContent = D.betaSamples.length ? 'Misurata con l\'etilometro in ' + D.betaSamples.length + (D.betaSamples.length === 1 ? ' serata.' : ' serate.') + ' Il margine prudenziale usa β diviso 1,2.'
+      : 'Lascia 0,15 se non l\'hai mai misurata: è la media dei bevitori moderati. Il margine prudenziale usa β diviso 1,2.';
+    $('btnResetCal').hidden = !(n || D.betaSamples.length);
+    $('accName').textContent = account.name + (account.email ? ' · ' + account.email : '');
+    $('accMode').textContent = account.mode === 'google' ? 'Accesso con Google. I dati sono nel tuo spazio privato e su questo dispositivo.' : 'Modalità di prova: i dati restano solo su questo dispositivo.';
+    setSync(Cloud.sync || 'ok');
+  }
+
+  /* ---------- gestione ---------- */
+  function renderAdmin() {
+    var cloudUser = account.mode === 'google';
+    $('admSub').textContent = cloudUser ? 'Le modifiche valgono per tutti gli utenti' : 'Modalità di prova: le modifiche valgono solo su questo dispositivo';
+    var nSess = D.sessions.filter(function (s) { return s.drinks.length; }).length;
+    $('admKv').innerHTML =
+      '<div><div class="k">Accesso con Google</div><div class="v">' + (Cloud.on ? 'Attivo' : 'Da collegare') + '</div><div class="s">' + (Cloud.on ? esc(CFG.firebase.projectId || '') : 'serve un progetto Firebase') + '</div></div>' +
+      '<div><div class="k">Utenti registrati</div><div class="v num" id="admUsers">' + (Cloud.on ? '…' : '–') + '</div><div class="s">' + (Cloud.on ? 'hanno accettato i termini' : 'disponibile con Firebase') + '</div></div>' +
+      '<div><div class="k">Termini in vigore</div><div class="v num">v ' + esc(APP.termsVersion) + '</div><div class="s">' + nSess + ' serate tue salvate</div></div>';
+    $('admNote').textContent = Cloud.on ? 'Per privacy vedi solo il numero di utenti: profili, bevande e misure di ciascuno restano leggibili solo dal proprietario.'
+      : 'Per attivare l\'accesso con Google incolla la configurazione Firebase in APP_CONFIG e pubblica l\'app su un indirizzo https. La guida è nel file CONFIGURAZIONE-GOOGLE.md.';
+    if (Cloud.on) Cloud.db.collection('directory').get().then(function (q) { $('admUsers').textContent = q.size; }).catch(function () { $('admUsers').textContent = '?'; });
+    $('admPresets').innerHTML = APP.presets.map(function (p) {
+      var id = 'ap' + p.id;
+      return '<div class="admin-row" data-pid="' + p.id + '">' +
+        '<label class="fld"><span>Icona</span><select id="' + id + 'i" data-f="icon">' + Object.keys(ICON_LABEL).map(function (k) { return '<option value="' + k + '"' + (k === p.icon ? ' selected' : '') + '>' + ICON_LABEL[k] + '</option>'; }).join('') + '</select></label>' +
+        '<label class="fld"><span>Nome</span><input type="text" id="' + id + 'n" data-f="name" maxlength="40" value="' + esc(p.name) + '"></label>' +
+        '<label class="fld"><span>ml</span><input class="num" type="number" id="' + id + 'm" data-f="ml" min="1" max="2000" value="' + p.ml + '"></label>' +
+        '<label class="fld"><span>% vol</span><input class="num" type="number" id="' + id + 'a" data-f="abv" min="0.5" max="96" step="0.5" value="' + p.abv + '"></label>' +
+        '<label class="fld"><span>Minuti</span><input class="num" type="number" id="' + id + 'd" data-f="dur" min="1" max="240" value="' + p.dur + '"></label>' +
+        '<button class="x" type="button" data-pdel aria-label="Rimuovi ' + esc(p.name) + '" style="margin-bottom:6px">×</button></div>';
+    }).join('');
+    $('admTermsVer').value = APP.termsVersion; $('admTermsText').value = APP.termsText; $('admDisc').value = APP.disclaimer;
+  }
+  function appChanged(msg) {
+    renderPresets(); $('discText').textContent = APP.disclaimer;
+    saveApp().then(function () { $('admSaved').textContent = msg || ''; }).catch(function () { $('admSaved').textContent = 'Salvataggio non riuscito: controlla i permessi dell\'account sviluppatore.'; });
+  }
+
+  /* ---------- schede ---------- */
+  var TAB_LABEL = { serata: 'Serata', calendario: 'Calendario', profilo: 'Profilo', gestione: 'Gestione' };
+  function tabList() { return isAdmin() ? ['serata', 'calendario', 'profilo', 'gestione'] : ['serata', 'calendario', 'profilo']; }
+  function renderTabs() {
+    $('tabs').innerHTML = tabList().map(function (t) { return '<a href="#' + t + '" data-tab="' + t + '">' + icon('nav_' + t) + '<span>' + TAB_LABEL[t] + '</span></a>'; }).join('');
+  }
+  function route() {
+    if (!account || !D || $('scrApp').hidden) return;
+    var h = (location.hash || '').slice(1);
+    if (tabList().indexOf(h) < 0) h = 'serata';
+    tab = h;
+    ['serata', 'calendario', 'profilo', 'gestione'].forEach(function (t) { $('tab-' + t).hidden = t !== h; });
+    Array.prototype.forEach.call($('tabs').children, function (a) { if (a.dataset.tab === h) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+    if (h === 'calendario') { refresh(); renderCalendar(); }
+    else if (h === 'gestione') renderAdmin();
+    else refresh();
+  }
+  function go(t) { if (location.hash === '#' + t) route(); else location.hash = t; }
+
+  /* ---------- eventi ---------- */
+  function twoStep(btn, label, fn) {   // conferma in due tocchi, senza finestre di dialogo
+    if (btn.dataset.armed) { clearTimeout(btn._t); delete btn.dataset.armed; fn(); return; }
+    btn.dataset.armed = '1'; btn.dataset.label = btn.textContent; btn.textContent = label;
+    btn._t = setTimeout(function () { delete btn.dataset.armed; btn.textContent = btn.dataset.label; }, 4000);
+  }
+  function bind() {
+    // accesso
+    $('btnGoogle').addEventListener('click', function () {
+      if (!Cloud.on) return;
+      var provider = new window.firebase.auth.GoogleAuthProvider();
+      Cloud.auth.signInWithPopup(provider).catch(function (e) {
+        var c = e && e.code;
+        if (c === 'auth/popup-closed-by-user' || c === 'auth/cancelled-popup-request') return;
+        if (c === 'auth/popup-blocked') { Cloud.auth.signInWithRedirect(provider); return; }
+        showAccess(c === 'auth/unauthorized-domain' ? 'Questo indirizzo non è tra i domini autorizzati del progetto Firebase.'
+          : c === 'auth/operation-not-supported-in-this-environment' ? 'L\'accesso con Google funziona solo quando l\'app è pubblicata su un indirizzo https, non da un file aperto dal computer.'
+          : 'Accesso non riuscito. Riprova tra poco.');
+      });
+    });
+    $('btnLocal').addEventListener('click', function () {
+      var a = { mode: 'local', uid: 'local', name: 'Ospite', email: '' };
+      wr('at.account', a); enter(a);
+    });
+    // termini
+    ['tAge', 'tTerms', 'tData'].forEach(function (id) {
+      $(id).addEventListener('change', function () { $('btnAccept').disabled = !($('tAge').checked && $('tTerms').checked && $('tData').checked); });
+    });
+    $('btnAccept').addEventListener('click', function () {
+      D.terms = { version: APP.termsVersion, at: Date.now() }; saveData();
+      if (Cloud.on && account.mode === 'google') Cloud.db.collection('directory').doc(account.uid).set({ acceptedAt: D.terms.at, termsVersion: APP.termsVersion }, { merge: true }).catch(function () { /* riprova al prossimo accesso */ });
+      startApp();
+    });
+    $('btnDecline').addEventListener('click', signOut);
+    $('btnTermsClose').addEventListener('click', function () { show('scrApp'); route(); });
+    $('btnTermsView').addEventListener('click', function () { showTerms(true); });
+
+    // serata
+    $('presets').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-p]'); if (!b) return;
+      var i = +b.dataset.p, p = i >= 0 ? APP.presets[i] : { name: 'Bevanda', ml: 100, abv: 12, dur: 15, icon: 'other' };
+      var now = Date.now();
+      if (S.drinks.length && !editingOld && R && !R.empty && now > R.zeroHi + 3 * HOUR) startNewSession();   // la serata precedente è finita
+      var t = editingOld && S.drinks.length ? sessionRef() + 30 * MIN : Math.floor(now / MIN) * MIN;
+      var d = { id: nid(), name: p.name, icon: p.icon, t: t, ml: p.ml, abv: p.abv, dur: p.dur };
+      S.drinks.push(d); renderDrinks(); fillSession(); commit();
+      if (i < 0) { var el = $('d' + d.id + 'n'); if (el) { el.focus(); el.select(); } }
+    });
+    $('drinks').addEventListener('input', function (e) {
+      var f = e.target.dataset.f, li = e.target.closest('.drink'); if (!f || !li) return;
+      var d = findDrink(li.dataset.id); if (!d) return;
+      if (f === 'name') d.name = e.target.value;
+      else if (f === 't') { var t = resolveTime(e.target.value, editingOld ? d.t : Date.now()); if (t === null) return; d.t = t; }
+      else { var v = pf(e.target.value); d[f] = v > 0 ? v : 0; }
+      commit();
+    });
+    $('drinks').addEventListener('click', function (e) {
+      if (!e.target.closest('[data-del]')) return;
+      var id = e.target.closest('.drink').dataset.id;
+      S.drinks = S.drinks.filter(function (d) { return d.id !== id; });
+      renderDrinks(); commit();
+    });
+    ['stEmpty', 'stSnack', 'stMeal'].forEach(function (id) { $(id).addEventListener('change', function () { S.stomach = $(id).value; D.stomach = S.stomach; commit(); }); });
+    $('btnNew').addEventListener('click', function () { startNewSession(); renderDrinks(); fillSession(); commit(); });
+    $('btnMeas').addEventListener('click', function () {
+      var v = pf($('measVal').value), t = resolveTime($('measTime').value, sessionRef()), err = $('measErr');
+      err.hidden = true;
+      if (!S.drinks.length) { err.hidden = false; err.textContent = 'Aggiungi prima le bevande della serata.'; return; }
+      if (!(v > 0) || v > 4 || t === null) { err.hidden = false; err.textContent = 'Inserisci un valore tra 0,01 e 4 g/L e l\'ora della misura.'; return; }
+      S.meas.push({ id: nid(), t: t, value: v }); $('measVal').value = ''; commit();
+    });
+    $('measList').addEventListener('click', function (e) {
+      if (!e.target.closest('[data-mdel]')) return;
+      var id = e.target.closest('li').dataset.mid;
+      S.meas = S.meas.filter(function (m) { return m.id !== id; }); commit();
+    });
+
+    // calendario
+    $('calPrev').addEventListener('click', function () { calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1); renderCalendar(); });
+    $('calNext').addEventListener('click', function () { calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1); renderCalendar(); });
+    $('calToday').addEventListener('click', function () { calMonth = null; calSel = null; renderCalendar(); });
+    $('calGrid').addEventListener('click', function (e) { var b = e.target.closest('[data-key]'); if (!b) return; calSel = b.dataset.key; renderCalendar(); });
+    $('calDayList').addEventListener('click', function (e) {
+      var li = e.target.closest('li'); if (!li) return; var sid = li.dataset.sid;
+      if (e.target.closest('[data-open]')) {
+        D.currentId = sid; pruneEmpty(); ensureCurrent();
+        editingOld = !!(S.sum && Date.now() > S.sum.zeroHi + 3 * HOUR);
+        renderDrinks(); fillSession(); saveData(); go('serata');
+      } else if (e.target.closest('[data-sdel]')) {
+        twoStep(e.target.closest('[data-sdel]'), '✓', function () {
+          D.sessions = D.sessions.filter(function (s) { return s.id !== sid; });
+          D.calib.samples = D.calib.samples.filter(function (x) { return x.sid !== sid; });
+          D.betaSamples = D.betaSamples.filter(function (x) { return x.sid !== sid; });
+          if (D.currentId === sid) { D.currentId = null; editingOld = false; ensureCurrent(); renderDrinks(); fillSession(); }
+          commit(); renderCalendar();
+        });
+      }
+    });
+
+    // profilo
+    ['sexM', 'sexF'].forEach(function (id) { $(id).addEventListener('change', function () { D.profile.sex = $('sexF').checked ? 'F' : 'M'; commit(); }); });
+    ['age', 'weight', 'height'].forEach(function (id) {
+      $(id).addEventListener('input', function () { var v = pf($(id).value); if (v > 0) { D.profile[id] = v; commit(); } });
+    });
+    $('category').addEventListener('change', function () { D.category = $('category').value; commit(); });
+    $('beta').addEventListener('input', function () { D.beta = clamp(+$('beta').value, 0.10, 0.25); commit(); });
+    $('btnProfileDone').addEventListener('click', function () { D.profileDone = true; saveData(); go('serata'); });
+    $('btnResetCal').addEventListener('click', function () {
+      twoStep($('btnResetCal'), 'Conferma: cancella tutte le misure', function () {
+        D.sessions.forEach(function (s) { s.meas = []; });
+        D.calib.samples = []; D.betaSamples = []; D.beta = 0.15; $('beta').value = 0.15; commit();
+      });
+    });
+    $('btnLogout').addEventListener('click', signOut);
+    $('btnWipe').addEventListener('click', function () {
+      twoStep($('btnWipe'), 'Conferma: elimina tutto per sempre', function () {
+        var uid = account.uid, n = $('wipeNote');
+        clearTimeout(pushTimer); rm('at.data.' + uid);
+        if (Cloud.on && account.mode === 'google') {
+          Promise.all([userDoc().delete(), Cloud.db.collection('directory').doc(uid).delete()]).then(function () {
+            return Cloud.auth.currentUser.delete().catch(function () { return Cloud.auth.signOut(); });
+          }).catch(function () { n.hidden = false; n.textContent = 'Non sono riuscito a cancellare i dati online. Controlla la connessione e riprova.'; });
+        } else { rm('at.account'); account = null; D = null; showAccess('Dati eliminati da questo dispositivo.'); }
+      });
+    });
+
+    // gestione
+    $('admPresets').addEventListener('input', function (e) {
+      var row = e.target.closest('[data-pid]'), f = e.target.dataset.f; if (!row || !f) return;
+      var p = APP.presets.filter(function (x) { return x.id === row.dataset.pid; })[0]; if (!p) return;
+      if (f === 'name' || f === 'icon') p[f] = e.target.value; else { var v = pf(e.target.value); if (v > 0) p[f] = v; }
+      appChanged('Catalogo salvato.');
+    });
+    $('admPresets').addEventListener('click', function (e) {
+      if (!e.target.closest('[data-pdel]')) return;
+      var pid = e.target.closest('[data-pid]').dataset.pid;
+      if (APP.presets.length <= 1) return;
+      APP.presets = APP.presets.filter(function (x) { return x.id !== pid; }); renderAdmin(); appChanged('Catalogo salvato.');
+    });
+    $('admAdd').addEventListener('click', function () { APP.presets.push({ id: nid(), name: 'Nuova bevanda', ml: 200, abv: 5, dur: 15, icon: 'other' }); renderAdmin(); appChanged('Catalogo salvato.'); });
+    $('admReset').addEventListener('click', function () { twoStep($('admReset'), 'Conferma ripristino', function () { APP.presets = defaultApp().presets; renderAdmin(); appChanged('Catalogo ripristinato.'); }); });
+    $('admSave').addEventListener('click', function () {
+      var ver = $('admTermsVer').value.trim() || APP.termsVersion, txt = $('admTermsText').value.trim(), disc = $('admDisc').value.trim();
+      if (!txt || !disc) { $('admSaved').textContent = 'Termini e disclaimer non possono essere vuoti.'; return; }
+      var bumped = ver !== APP.termsVersion;
+      APP.termsVersion = ver; APP.termsText = txt; APP.disclaimer = disc;
+      if (bumped) { D.terms = { version: ver, at: Date.now() }; saveData(); }
+      renderAdmin(); appChanged(bumped ? 'Pubblicato. Gli altri utenti dovranno accettare la versione ' + ver + '.' : 'Testi pubblicati.');
+    });
+
+    window.addEventListener('hashchange', route);
+    var rz; window.addEventListener('resize', function () { clearTimeout(rz); rz = setTimeout(function () { if (R && tab === 'serata' && !$('scrApp').hidden) renderChart(R, Date.now(), limit()); }, 120); });
+    setInterval(refresh, 30000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(); });
+  }
+
+  /* ---------- webapp installabile ---------- */
+  var installEvt = null;
+  function standalone() { return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true; }
+  function initWebApp() {
+    if (!('serviceWorker' in navigator) || location.protocol !== 'https:' && location.hostname !== 'localhost') return;
+    try {
+      navigator.serviceWorker.register('sw.js').then(function () { $('installCard').hidden = standalone(); }).catch(function () { /* anteprima o file locale: niente installazione */ });
+    } catch (e) { /* non disponibile */ }
+    window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); installEvt = e; $('btnInstall').hidden = false; });
+    window.addEventListener('appinstalled', function () { $('installCard').hidden = true; });
+    $('btnInstall').addEventListener('click', function () { if (!installEvt) return; installEvt.prompt(); installEvt = null; $('btnInstall').hidden = true; });
+  }
+
+  /* ---------- avvio ---------- */
+  bind(); initWebApp();
+  $('discText').textContent = DEFAULT_DISC;
+  initCloud().then(function (ok) {
+    if (ok) {
+      Cloud.auth.onAuthStateChanged(function (u) {
+        if (u) enter({ mode: 'google', uid: u.uid, name: u.displayName || 'Utente', email: u.email || '' });
+        else { account = null; D = null; showAccess(); }
+      });
+    } else {
+      var a = rd('at.account');
+      if (a && a.mode === 'local') enter(a); else showAccess();
+    }
+  });
+})();
+</script>
+</body>
+</html>
