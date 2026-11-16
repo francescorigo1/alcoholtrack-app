@@ -153,6 +153,7 @@ a { color: var(--accent); }
 .tabs a[aria-current="page"] { background: var(--seg-on); color: var(--ink); box-shadow: 0 3px 8px -2px var(--shade), 0 1px 1px var(--shade-2); }
 .avatar { width: 38px; height: 38px; border-radius: 50%; border: 0; background: var(--primary); color: var(--on-primary); font-weight: 700; cursor: pointer; flex: none; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
 @media (max-width: 780px) {
+  .top { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--bg); }
   .tabs {
     position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 30; padding: 5px;
     background: var(--glass); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
@@ -192,11 +193,19 @@ a { color: var(--accent); }
 .pill[data-s="good"] { background: var(--good-soft); color: var(--good); }
 .headline { font-size: clamp(1.4rem, 2.7vw, 1.85rem); font-weight: 700; letter-spacing: -.035em; line-height: 1.12; margin-top: 14px; }
 .headline-sub { color: var(--ink-2); font-size: .96rem; margin-top: 6px; max-width: 60ch; }
-.readout { display: flex; align-items: flex-end; gap: 12px 24px; flex-wrap: wrap; margin-top: 22px; }
+.readout { display: flex; align-items: flex-end; gap: 18px 36px; flex-wrap: wrap; margin-top: 22px; }
+.ro { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ro-k { font-size: .84rem; font-weight: 600; color: var(--ink-3); }
+.ro-s { font-size: .88rem; color: var(--ink-2); }
+.ro-s b { color: var(--ink); font-weight: 600; }
+.ro-peak { padding-left: 20px; border-left: 1px solid var(--line); }
+.ro-peak-v { font-family: var(--f-round); font-size: clamp(2.3rem, 8vw, 3.1rem); font-weight: 600; line-height: .9; letter-spacing: -.04em; }
+.ro-peak.rising .ro-k { color: var(--ink); }
+.ro-peak.rising .ro-k::before { content: '↑ '; }
+.trend { font-size: .9rem; color: var(--ink-2); margin-top: 10px; }
+.trend:empty { display: none; }
 .readout-big { font-family: var(--f-round); font-size: clamp(3.6rem, 12vw, 5.2rem); font-weight: 600; line-height: .86; letter-spacing: -.045em; }
 .readout-unit { font-family: var(--f-ui); font-size: 1rem; font-weight: 500; color: var(--ink-3); margin-left: 8px; letter-spacing: -.01em; }
-.readout-side { display: flex; flex-direction: column; gap: 2px; padding-bottom: 4px; font-size: .9rem; color: var(--ink-2); }
-.readout-side b { color: var(--ink); font-weight: 600; }
 
 .scale { margin-top: 20px; }
 .scale-track { position: relative; height: 12px; border-radius: 6px; background: var(--fill); }
@@ -209,7 +218,7 @@ a { color: var(--accent); }
 .scale-labels span:last-child { transform: translateX(-100%); }
 .scale-cap { font-size: .8rem; color: var(--ink-3); margin-top: 4px; }
 
-.facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 22px; border-top: 1px solid var(--line); }
+.facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 22px; border-top: 1px solid var(--line); }
 .fact { padding: 14px 14px 0 0; min-width: 0; }
 .fact + .fact { padding-left: 14px; border-left: 1px solid var(--line); }
 .fact-k { font-size: .8rem; font-weight: 500; color: var(--ink-3); }
@@ -218,7 +227,7 @@ a { color: var(--accent); }
 .fact-s { font-size: .82rem; color: var(--ink-2); margin-top: 3px; }
 @media (max-width: 620px) {
   .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .fact:nth-child(3) { padding-left: 0; border-left: 0; }
+  .fact:nth-child(3) { padding-left: 0; border-left: 0; grid-column: 1 / -1; }
   .fact:nth-child(n+3) { border-top: 1px solid var(--line); margin-top: 14px; }
 }
 
@@ -428,12 +437,18 @@ th:first-child, td:first-child { text-align: left; }
             <p class="headline" id="headline"></p>
             <p class="headline-sub" id="headlineSub"></p>
             <div class="readout">
-              <div class="readout-big num"><span id="nowBig">0,00</span><span class="readout-unit">g/L adesso</span></div>
-              <div class="readout-side">
-                <span>Intervallo plausibile <b class="num" id="nowRange">0,00 – 0,00</b></span>
-                <span id="trend"></span>
+              <div class="ro">
+                <div class="ro-k">Adesso</div>
+                <div class="readout-big num"><span id="nowBig">0,00</span><span class="readout-unit">g/L</span></div>
+                <div class="ro-s">Intervallo plausibile <b class="num" id="nowRange">0,00 – 0,00</b></div>
+              </div>
+              <div class="ro ro-peak" id="peakBox">
+                <div class="ro-k" id="peakK">Picco</div>
+                <div class="ro-peak-v num"><span id="peakBig">–</span><span class="readout-unit">g/L</span></div>
+                <div class="ro-s" id="peakS"></div>
               </div>
             </div>
+            <p class="trend" id="trend"></p>
             <div class="scale" aria-hidden="true">
               <div class="scale-track" id="scaleTrack"></div>
               <div class="scale-labels" id="scaleLabels"></div>
@@ -1277,8 +1292,9 @@ if (typeof module !== 'undefined') module.exports = BAC;
       head = 'Aggiungi quello che hai bevuto';
       sub = 'Il calcolo parte appena tocchi la prima bevanda.';
       $('nowBig').textContent = '0,00'; $('nowRange').textContent = '0,00 – 0,00'; $('trend').textContent = '';
+      $('peakBig').textContent = '–'; $('peakK').textContent = 'Picco'; $('peakS').textContent = 'nessun dato'; $('peakBox').classList.remove('rising');
       renderScale(null);
-      $('facts').innerHTML = fact('Picco', '–', 'nessun dato') + fact(lim > 0 ? 'Sotto 0,5 g/L' : 'Limite di legge', lim > 0 ? '–' : '0,0 <small>g/L</small>', lim > 0 ? 'limite di legge' : 'per te vale l\'orario «A zero»') + fact('A zero', '–', 'nessun dato') + fact('Alcol puro', '0 <small>g</small>', '0 unità alcoliche');
+      $('facts').innerHTML = fact(lim > 0 ? 'Sotto 0,5 g/L' : 'Limite di legge', lim > 0 ? '–' : '0,0 <small>g/L</small>', lim > 0 ? 'limite di legge' : 'per te vale l\'orario «A zero»') + fact('A zero', '–', 'nessun dato') + fact('Alcol puro', '0 <small>g</small>', '0 unità alcoliche');
     } else {
       var c = r.at(now), nxt = r.at(now + 5 * MIN);
       var exAbove = lim > 0 && r.peak.value >= lim, hiAbove = lim > 0 && r.peakHi.value >= lim;
@@ -1312,10 +1328,13 @@ if (typeof module !== 'undefined') module.exports = BAC;
       $('nowBig').textContent = num(c.ex, 2);
       $('nowRange').textContent = num(c.lo, 2) + ' – ' + num(c.hi, 2);
       var dlt = nxt.ex - c.ex;
-      $('trend').textContent = now < r.t0 ? '' : dlt > 0.003 ? 'In salita: stai ancora assorbendo' : dlt < -0.003 ? 'In discesa' : (c.ex > 0.005 ? 'Vicino al picco' : '');
+      $('trend').textContent = now < r.t0 ? '' : dlt > 0.003 ? 'In salita: stai ancora assorbendo, il tasso arriverà a ' + num(r.peak.value, 2) + ' g/L' : dlt < -0.003 ? 'In discesa' : (c.ex > 0.005 ? 'Vicino al picco' : '');
       renderScale(c);
-      var pk = r.peak;
-      var f1 = fact('Picco', num(pk.value, 2) + ' <small>g/L</small>', (pk.t > now ? 'previsto alle ' : 'alle ') + when(pk.t, now) + '; fino a ' + num(r.peakHi.value, 2) + ' con margine prudenziale');
+      var pk = r.peak, rising = pk.t > now;
+      $('peakBig').textContent = num(pk.value, 2);
+      $('peakK').textContent = rising ? 'Picco previsto' : 'Picco raggiunto';
+      $('peakS').textContent = 'alle ' + when(pk.t, now) + ' · fino a ' + num(r.peakHi.value, 2) + ' con margine';
+      $('peakBox').classList.toggle('rising', rising);
       var f2;
       if (lim === 0) f2 = fact('Limite di legge', '0,0 <small>g/L</small>', 'per te vale l\'orario «A zero»');
       else if (!hiAbove) f2 = fact('Sotto 0,5 g/L', 'sempre', 'mai sopra il limite, neanche con margine prudenziale');
@@ -1323,7 +1342,7 @@ if (typeof module !== 'undefined') module.exports = BAC;
       else f2 = fact('Sotto 0,5 g/L', hm(r.legalEx), eta(r.legalEx, now) + tagIn(r.legalEx, now) + '; con margine prudenziale ' + hm(r.legalHi));
       var f3 = fact('A zero', hm(r.zeroEx), eta(r.zeroEx, now) + tagIn(r.zeroEx, now) + '; con margine prudenziale ' + hm(r.zeroHi));
       var f4 = fact('Alcol puro', num(r.total, 0) + ' <small>g</small>', num(r.total / 12, 1) + ' unità alcoliche');
-      $('facts').innerHTML = f1 + f2 + f3 + f4;
+      $('facts').innerHTML = f2 + f3 + f4;
       if (r.peakHi.value >= 2.5) {
         $('dangerNote').hidden = false;
         $('dangerNote').innerHTML = '<b>Quantità pericolosa.</b> Con questi dati il tasso può superare 2,5 g/L: c\'è rischio di intossicazione acuta. Non restare da solo. Se qualcuno non risponde, vomita da sdraiato o respira male, chiama il 112.';
