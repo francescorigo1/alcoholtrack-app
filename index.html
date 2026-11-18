@@ -117,6 +117,7 @@ a { color: var(--accent); }
 .actions { margin-top: 16px; }
 .alert { display: flex; align-items: center; justify-content: space-between; gap: 12px 18px; flex-wrap: wrap; }
 .alert > span { flex: 1 1 260px; }
+.legal-links { font-size: .86rem; }
 .sos { font-size: .9rem; font-weight: 600; color: var(--ink); }
 .sos a { color: var(--crit); }
 .btn-big { min-height: 52px; width: 100%; font-size: 1rem; }
@@ -405,7 +406,7 @@ th:first-child, td:first-child { text-align: left; }
       <button class="btn btn-primary btn-big" id="btnGoogle" type="button" disabled>Accedi con Google</button>
       <button class="btn btn-big" id="btnLocal" type="button" hidden>Prova senza account, su questo dispositivo</button>
       <p class="msg" id="accessNote" hidden></p>
-      <p class="fine">I tuoi dati sono visibili solo a te.</p>
+      <p class="fine">I tuoi dati sono visibili solo a te. <a href="privacy.html">Privacy</a> · <a href="cookie.html">Cookie</a></p>
     </div>
   </section>
 
@@ -419,7 +420,7 @@ th:first-child, td:first-child { text-align: left; }
       <div class="checks" id="termsChecks">
         <label class="check"><input type="checkbox" id="tAge"><span>Ho almeno 18 anni.</span></label>
         <label class="check"><input type="checkbox" id="tTerms"><span>Ho letto e accetto i termini e condizioni. Ho capito che l'app fornisce una stima e non va usata per decidere se guidare.</span></label>
-        <label class="check"><input type="checkbox" id="tData"><span>Acconsento al salvataggio dei miei dati (peso, altezza, età, bevande e misure) per far funzionare l'app.</span></label>
+        <label class="check"><input type="checkbox" id="tData"><span>Ho letto l'<a href="privacy.html" target="_blank">informativa privacy</a> e acconsento esplicitamente al trattamento dei miei dati, compresi quelli sul consumo di alcol, per far funzionare l'app.</span></label>
       </div>
       <div class="row">
         <button class="btn btn-primary" id="btnAccept" type="button" disabled>Accetta e continua</button>
@@ -685,6 +686,7 @@ th:first-child, td:first-child { text-align: left; }
   <footer class="disclaimer">
     <h2><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 1.2 15.5 14.5H.5z"/><path d="M8 6v4M8 11.6v1.2" stroke="#fff" stroke-width="1.6"/></svg>Avvertenza</h2>
     <p id="discText"></p>
+    <p class="legal-links"><a href="privacy.html">Privacy</a> · <a href="cookie.html">Cookie</a></p>
     <p class="sos">Emergenza sanitaria: <a href="tel:118">118</a> · numero europeo <a href="tel:112">112</a></p>
   </footer>
 </div>
@@ -967,7 +969,7 @@ if (typeof module !== 'undefined') module.exports = BAC;
     '## 3. Chi può usarla',
     'Devi avere almeno 18 anni. L\'app non incoraggia il consumo di alcol.',
     '## 4. I tuoi dati',
-    'Salviamo: nome ed email dell\'account con cui accedi, sesso, età, peso, altezza, tipo di patente, bevande e orari delle serate, misure dell\'etilometro. Servono solo a fare i calcoli e a mostrarti il calendario. Sono conservati su questo dispositivo e, se accedi con Google, in uno spazio privato associato al tuo account sui server di Google Firebase. Sono visibili solo a te: non vengono venduti né condivisi. Puoi cancellarli in ogni momento da Profilo, con «Elimina i miei dati».',
+    'Salviamo: nome ed email dell\'account con cui accedi, sesso, età, peso, altezza, tipo di patente, bevande e orari delle serate, misure dell\'etilometro. Servono solo a fare i calcoli e a mostrarti il calendario. Sono conservati su questo dispositivo e, se accedi con Google, in uno spazio privato associato al tuo account sui server di Google Firebase. Sono visibili solo a te: non vengono venduti né condivisi. Puoi cancellarli in ogni momento da Profilo, con «Elimina i miei dati». I dettagli sono nell\'informativa privacy e nella cookie policy, linkate in fondo a ogni pagina.',
     '## 5. Responsabilità',
     'L\'app è fornita così com\'è, senza garanzie di esattezza. Nei limiti consentiti dalla legge, chi la sviluppa non risponde dei danni che derivano dall\'uso delle stime.',
     '## 6. Emergenze',
@@ -1030,7 +1032,7 @@ if (typeof module !== 'undefined') module.exports = BAC;
   var calMonth = null, calSel = null;
 
   function defaultApp() {
-    return { presets: DEFAULT_PRESETS.map(function (p) { return Object.assign({ id: nid() }, p); }), termsVersion: '1.0', termsText: DEFAULT_TERMS, disclaimer: DEFAULT_DISC };
+    return { presets: DEFAULT_PRESETS.map(function (p) { return Object.assign({ id: nid() }, p); }), termsVersion: '1.1', termsText: DEFAULT_TERMS, disclaimer: DEFAULT_DISC };
   }
   function normApp(a) {
     var d = defaultApp(); if (!a || typeof a !== 'object') return d;

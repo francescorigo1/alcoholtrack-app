@@ -1,6 +1,6 @@
 /* AlcoholTrack: service worker. Rete per prima (gli aggiornamenti arrivano subito), copia locale se sei offline. */
-const CACHE = 'alcoholtrack-v1';
-const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
+const CACHE = 'alcoholtrack-v2';
+const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'privacy.html', 'cookie.html'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
